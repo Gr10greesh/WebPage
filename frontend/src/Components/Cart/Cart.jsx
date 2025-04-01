@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useShop } from "../../Context/ShopContext";
 import "../Cart/Cart.css";
 
@@ -17,26 +17,33 @@ const Cart = () => {
 
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Fetch cart data when component mounts
-  useEffect(() => {
-    if (isOpen) {
-      fetchCartFromServer();
-    }
-  }, [isOpen, fetchCartFromServer]);
-
-  // Handle cart opening/closing
-  const toggleCart = () => {
-    setIsOpen(!isOpen);
-  };
-
-  // Fetch cart data when opened
-  useEffect(() => {
-    if (isOpen) {
+  // Optimized fetch function
+  const fetchCartData = useCallback(async () => {
+    try {
       setIsLoading(true);
-      fetchCartFromServer().finally(() => setIsLoading(false));
+      setError(null);
+      await fetchCartFromServer();
+    } catch (err) {
+      console.error("Failed to fetch cart:", err);
+      setError("Failed to load cart items");
+    } finally {
+      setIsLoading(false);
     }
-  }, [isOpen, fetchCartFromServer]);
+  }, [fetchCartFromServer]);
+
+  // Single useEffect for data fetching
+  useEffect(() => {
+    if (isOpen) {
+      fetchCartData();
+    }
+  }, [isOpen, fetchCartData]);
+
+  // Toggle cart visibility
+  const toggleCart = useCallback(() => {
+    setIsOpen(prev => !prev);
+  }, []);
 
   // Close cart on ESC key
   useEffect(() => {
@@ -50,9 +57,17 @@ const Cart = () => {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen]);
 
+  // Get cart data
   const cartProducts = getCartProducts();
   const totalItems = getTotalCartItems();
   const totalAmount = getTotalCartAmount();
+
+  // Debug logs (remove in production)
+  useEffect(() => {
+    console.log("Cart Products:", cartProducts);
+    console.log("Total Items:", totalItems);
+    console.log("Total Amount:", totalAmount);
+  }, [cartProducts, totalItems, totalAmount]);
 
   return (
     <div className="cart-container">
@@ -82,7 +97,9 @@ const Cart = () => {
             </div>
 
             <div className="cart-items">
-              {isLoading ? (
+              {error ? (
+                <div className="error-message">{error}</div>
+              ) : isLoading ? (
                 <div className="loading-spinner">Loading cart...</div>
               ) : cartProducts.length === 0 ? (
                 <p className="empty-cart">Your cart is empty</p>
@@ -96,6 +113,9 @@ const Cart = () => {
                       width={80}
                       height={80}
                       loading="lazy"
+                      onError={(e) => {
+                        e.target.src = "/placeholder.svg";
+                      }}
                     />
                     <div className="item-details">
                       <h3>{item.name}</h3>
@@ -139,7 +159,10 @@ const Cart = () => {
                   <button className="checkout-btn">Proceed to Checkout</button>
                   <button 
                     className="clear-btn" 
-                    onClick={clearCart}
+                    onClick={() => {
+                      clearCart();
+                      setIsOpen(false);
+                    }}
                     aria-label="Clear cart"
                   >
                     Clear Cart
