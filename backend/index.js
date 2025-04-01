@@ -1,3 +1,4 @@
+const dotenv = require('dotenv');
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
@@ -6,79 +7,123 @@ const mongoose = require("mongoose");
 const multer = require("multer");
 const path = require("path"); // Import the path module
 const router = express.Router();
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
+
 
 
 const app = express();
 const port = 4000;
 
+dotenv.config();
+
 // Middleware
 app.use(express.json());
 app.use(cors());
+
+// Database Connection with MongoDB
+mongoose
+  .connect("mongodb+srv://greeshdahal432:gr10greesh@cluster0.f0zi3.mongodb.net/gr10")
+  .then(() => console.log("MongoDB Connected"))
+  .catch((err) => console.error("MongoDB Connection Error:", err));
 
 // User Schema and Model
 const userSchema = new mongoose.Schema({
   phonenumber: String,
   email: String,
   password: String,
+  resetPasswordToken: String,
+  resetPasswordExpires: Date
 });
 
-// Product Schema and Model
-const Product = mongoose.model("Product",{
-  id:{
-    type:Number,
-    required:true,
-  },
-  name:{
-    type:String,
-    required:true,
-  },
-  image:{
-    type:String,
-    required:true,
-  },
-  category:{
-    type:String,
-    required:true,
-  },
-  new_price:{
-    type:Number,
-    required:true,
-  },
-  old_price:{
-    type:Number,
-    required:true,
-  },
-  date:{
-    type:Date,
-    default:Date.now,
-  },
-  available:{
-    type:Boolean,
-    default:true,
-  },
+const User = mongoose.model("User", userSchema);
 
-})
+// Product Schema and Model
+const Product = mongoose.model("Product", {
+  id: { type: Number, required: true },
+  name: { type: String, required: true },
+  image: { type: String, required: true },
+  category: { type: String, required: true },
+  new_price: { type: Number, required: true },
+  old_price: { type: Number, required: true },
+  date: { type: Date, default: Date.now },
+  available: { type: Boolean, default: true }
+});
+
 const cartSchema = new mongoose.Schema({
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-    required: true,
-  },
-  items: [
-    {
-      productId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Product",
-        required: true,
-      },
-      quantity: {
-        type: Number,
-        required: true,
-        default: 1,
-      },
-    },
-  ],
-})
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  items: [{
+    productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product", required: true },
+    quantity: { type: Number, required: true, default: 1 }
+  }]
+});
+
+const Cart = mongoose.model("Cart", cartSchema);
+
+// Email Configuration
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
+});
+
+
+// Password Reset Endpoints
+app.post('/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    return res.status(400).json({ success: false, message: "User not found" });
+  }
+
+  const resetToken = crypto.randomBytes(20).toString('hex');
+  user.resetToken = resetToken;
+  await user.save();
+
+  const resetLink = `http://localhost:3000/reset-password?token=${resetToken}`;
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: "Password Reset Request",
+    html: `<p>You requested a password reset. Click the link below:</p>
+           <a href="${resetLink}">Reset Password</a><p>This link expires in 1 hour.</p>`,
+  };
+
+  await transporter.sendMail(mailOptions);
+  res.json({ success: true, message: "Reset link sent to your email!" });
+});
+
+
+ app.post('/reset-password', async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+    
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ success: false, message: "Invalid/expired token" });
+    }
+
+    // Update password
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    res.json({ success: true, message: "Password updated successfully" });
+  } catch (error) {
+    console.error("Reset password error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
 
 // server/models/Product.js
 const productSchema = new mongoose.Schema({
@@ -88,7 +133,38 @@ const productSchema = new mongoose.Schema({
   description: { type: String },
 });
 
-const Cart = mongoose.model("Cart", cartSchema);
+
+
+
+
+// Reset password route
+router.post('/reset-password', async (req, res) => {
+  try {
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ success: false, message: "Invalid or expired token" });
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(req.body.newPassword, salt);
+    user.resetPasswordToken = "";
+    user.resetPasswordExpires = undefined;
+    
+    await user.save();
+
+    res.json({ success: true, message: "Password reset successful" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+
 
 // server/routes/products.js
 router.get('/search', async (req, res) => {
@@ -176,7 +252,7 @@ app.get("/cart", async (req, res) => {
 
     // Map items to match frontend expectation
     const formattedItems = cart.items.map(item => ({
-      productsId: {
+      productId: {
         _id: item.productId._id,
         // Include other product fields you need
         name: item.productId.name,
@@ -295,13 +371,9 @@ app.post("/removeproduct", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
-// Database Connection with MongoDB
-mongoose
-  .connect("mongodb+srv://greeshdahal432:gr10greesh@cluster0.f0zi3.mongodb.net/gr10")
-  .then(() => console.log("MongoDB Connected"))
-  .catch((err) => console.error("MongoDB Connection Error:", err));
 
-const User = mongoose.model("User", userSchema);
+
+
 
 // Image Storage Engine
 const storage = multer.diskStorage({
