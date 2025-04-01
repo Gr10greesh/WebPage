@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect, useContext } from "react";
+import { createContext, useState, useEffect, useContext, useCallback, useMemo } from "react";
 import axios from "axios";
 
 export const ShopContext = createContext();
@@ -14,7 +14,6 @@ const ShopContextProvider = ({ children }) => {
     axios
       .get("http://localhost:4000/allproducts")
       .then((response) => {
-        console.log("Fetched Products:", response.data);
         setAllProducts(response.data);
         setLoading(false);
       })
@@ -24,61 +23,65 @@ const ShopContextProvider = ({ children }) => {
       });
   }, []);
 
-  // Fetch cart data from the server
-  const fetchCartFromServer = () => {
+  // Memoized fetch cart function
+  const fetchCartFromServer = useCallback(async () => {
     const token = localStorage.getItem("auth-token");
     if (token) {
-      return axios
-        .get("http://localhost:4000/cart", { headers: { "auth-token": token } })
-        .then((response) => {
-          if (response.data?.success) {
-            const cart = {};
-            response.data.items?.forEach((item) => {
-              if (item?.productId?._id) {  
-                cart[item.productId._id] = item.quantity || 1;
-              }
-            });
+      try {
+        const response = await axios.get("http://localhost:4000/cart", { 
+          headers: { "auth-token": token } 
+        });
+        
+        if (response.data?.success) {
+          const cart = {};
+          response.data.items?.forEach((item) => {
+            if (item?.productId?._id) {  
+              cart[item.productId._id] = item.quantity || 1;
+            }
+          });
+          
+          // Only update state if cart actually changed
+          if (JSON.stringify(cart) !== JSON.stringify(cartItems)) {
             setCartItems(cart);
           }
-        })
-        .catch((error) => {
-          console.error("Error fetching cart:", error);
-          throw error;
-        });
+        }
+        return response.data?.items || [];
+      } catch (error) {
+        console.error("Error fetching cart:", error);
+        return [];
+      }
     }
-    return Promise.resolve();
-  };
+    return [];
+  }, [cartItems]);
 
   // Save cart to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem("cart", JSON.stringify(cartItems));
   }, [cartItems]);
 
-  const updateCartOnServer = (updatedCart) => {
+  const updateCartOnServer = useCallback((updatedCart) => {
     const token = localStorage.getItem("auth-token");
     if (token) {
       axios
-        .post("http://localhost:4000/update-cart", { cartItems: updatedCart }, { 
-          headers: { "auth-token": token } 
-        })
+        .post("http://localhost:4000/update-cart", 
+          { cartItems: updatedCart }, 
+          { headers: { "auth-token": token } }
+        )
         .catch((error) => console.error("Error updating cart:", error));
     }
-  };
+  }, []);
 
-  const addToCart = async (productId) => {
+  const removeFromCart = useCallback((productId) => {
     const idStr = String(productId);
     setCartItems((prevCart) => {
-      const updatedCart = { 
-        ...prevCart, 
-        [idStr]: (prevCart[idStr] || 0) + 1 
-      };
+      const updatedCart = { ...prevCart };
+      delete updatedCart[idStr];
       updateCartOnServer(updatedCart);
       return updatedCart;
     });
-    await fetchCartFromServer(); // Refresh cart after update
-  };
+  }, [updateCartOnServer]);
 
-  const updateQuantity = (productId, quantity) => {
+  const updateQuantity = useCallback((productId, quantity) => {
     const idStr = String(productId);
     if (quantity <= 0) {
       removeFromCart(idStr);
@@ -90,19 +93,21 @@ const ShopContextProvider = ({ children }) => {
       updateCartOnServer(updatedCart);
       return updatedCart;
     });
-  };
+  }, [removeFromCart, updateCartOnServer]);
 
-  const removeFromCart = (productId) => {
+  const addToCart = useCallback((productId) => {
     const idStr = String(productId);
     setCartItems((prevCart) => {
-      const updatedCart = { ...prevCart };
-      delete updatedCart[idStr];
+      const updatedCart = { 
+        ...prevCart, 
+        [idStr]: (prevCart[idStr] || 0) + 1 
+      };
       updateCartOnServer(updatedCart);
       return updatedCart;
     });
-  };
+  }, [updateCartOnServer]);
 
-  const clearCart = () => {
+  const clearCart = useCallback(() => {
     setCartItems({});
     const token = localStorage.getItem("auth-token");
     if (token) {
@@ -112,46 +117,60 @@ const ShopContextProvider = ({ children }) => {
         })
         .catch((error) => console.error("Error clearing cart:", error));
     }
-  };
+  }, []);
 
-  const getTotalCartAmount = () => {
+  const getTotalCartAmount = useCallback(() => {
     return Object.keys(cartItems).reduce((total, productId) => {
       const product = allProducts.find((p) => p._id === productId);
       return product ? total + product.new_price * cartItems[productId] : total;
     }, 0);
-  };
+  }, [cartItems, allProducts]);
 
-  const getTotalCartItems = () => {
+  const getTotalCartItems = useCallback(() => {
     return Object.values(cartItems).reduce((total, count) => total + count, 0);
-  };
+  }, [cartItems]);
 
-  const getCartProducts = () => {
+  const getCartProducts = useCallback(() => {
     return Object.keys(cartItems)
       .map((productId) => {
         const product = allProducts.find((p) => p._id === productId);
         return product ? { ...product, quantity: cartItems[productId] } : null;
       })
       .filter(Boolean);
-  };
+  }, [cartItems, allProducts]);
+
+  // Memoized context value
+  const contextValue = useMemo(() => ({
+    allProducts,
+    cartItems,
+    addToCart,
+    removeFromCart,
+    updateQuantity,
+    clearCart,
+    getTotalCartAmount,
+    getTotalCartItems,
+    getCartProducts,
+    loading,
+    fetchCartFromServer,
+    searchResults,
+    setSearchResults
+  }), [
+    allProducts,
+    cartItems,
+    addToCart,
+    removeFromCart,
+    updateQuantity,
+    clearCart,
+    getTotalCartAmount,
+    getTotalCartItems,
+    getCartProducts,
+    loading,
+    fetchCartFromServer,
+    searchResults
+  ]);
 
   return (
-    <ShopContext.Provider
-      value={{
-        allProducts,
-        cartItems,
-        addToCart,
-        removeFromCart,
-        updateQuantity,
-        clearCart,
-        getTotalCartAmount,
-        getTotalCartItems,
-        getCartProducts,
-        loading,
-        fetchCartFromServer,
-        searchResults,
-        setSearchResults
-      }}
-    >
+    <ShopContext.Provider value={contextValue}>
       {children}
     </ShopContext.Provider>
   );
