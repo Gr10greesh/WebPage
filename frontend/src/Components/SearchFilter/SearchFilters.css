@@ -1,15 +1,32 @@
 .search-filters {
-    padding: 20px;
-    background: #f5f5f5;
-    margin-bottom: 20px;
-    display: flex;
-    gap: 10px;
-    align-items: center;
-  }
-  
-  .search-filters input, 
-  .search-filters select {
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-  }
+  padding: 12px 15px; /* Reduced padding */
+  background: #f5f5f5;
+  margin-bottom: 15px;
+  display: flex;
+  gap: 8px; /* Reduced gap */
+  align-items: center;
+  border-radius: 6px; /* Added subtle rounding */
+}
+
+.search-filters input, 
+.search-filters select {
+  padding: 6px 8px; /* Smaller padding */
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem; /* Slightly smaller font */
+  height: 34px; /* Fixed height for consistency */
+}
+
+/* Optional: Make selects match inputs better */
+.search-filters select {
+  min-width: 120px; /* Prevent too narrow selects */
+  cursor: pointer;
+}
+
+/* Focus states */
+.search-filters input:focus, 
+.search-filters select:focus {
+  border-color: #0066cc;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+}
