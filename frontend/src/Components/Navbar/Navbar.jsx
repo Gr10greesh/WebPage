@@ -12,7 +12,7 @@ const Navbar = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const menuRef = useRef();
   const dropdownRef = useRef();
-  const { getTotalCartItems, clearCart, setSearchResults } = useContext(ShopContext);
+  const { clearCart, setSearchResults } = useContext(ShopContext);
   const location = useLocation();
 
   const dropdown_toggle = () => {
@@ -134,9 +134,11 @@ const Navbar = () => {
           </Link>
         )}
         
-        {/* Add the Cart component here */}
+        
+        
         <Cart />
       </div>
+      
     </div>
   );
 };
