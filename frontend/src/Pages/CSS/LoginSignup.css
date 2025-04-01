@@ -58,6 +58,70 @@
     color: #5c5c5c;
     font-weight: 500;
 }
+
+.forgot-password-link {
+    color: #0066cc;
+    text-align: center;
+    margin-top: 10px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  
+  .forgot-password-link:hover {
+    text-decoration: underline;
+  }
+  
+  .reset-password-form,
+  .forgot-password-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%;
+  }
+  
+  .back-to-login {
+    color: #0066cc;
+    text-align: center;
+    cursor: pointer;
+    margin-top: 15px;
+  }
+  
+  .back-to-login:hover {
+    text-decoration: underline;
+  }
+
+  .auth-button {
+    width: 100%;
+    padding: 12px;
+    background: #ff4141;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 15px;
+  }
+
+  .auth-button:hover {
+    background: #e60000;
+  }
+
+  .forgot-password {
+    color: #0066cc;
+    text-align: right;
+    font-size: 14px;
+    margin-top: 5px;
+    cursor: pointer;
+  }
+
+  .forgot-password:hover {
+  text-decoration: underline;
+}
+
+
+
+
+
 @media(max-width: 1280px){
     .loginsignup{
         padding-top: 50px;
