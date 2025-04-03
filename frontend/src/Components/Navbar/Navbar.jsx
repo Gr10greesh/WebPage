@@ -43,23 +43,45 @@ const Navbar = () => {
     window.location.replace("/");
   };
 
+  const fetchallproducts = async () => {
+    try {
+      const response = await fetch('http://localhost:4000/allproducts');
+      const data = await response.json();
+      setSearchResults(data);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      setSearchResults([]);
+    }
+  };
+  
+  // Then update your handleSearchChange to use the correct function name
   const handleSearchChange = (e) => {
     const query = e.target.value;
     setSearchQuery(query);
     
-    // Only search when on homepage
     if (location.pathname === "/") {
-      searchProducts(query);
+      if (query.trim() === "") {
+        // When search is empty, fetch all products
+        fetchallproducts(); // Note the correct capitalization
+      } else {
+        searchProducts(query);
+      }
     }
   };
 
   const searchProducts = async (query) => {
     try {
       const response = await fetch(`http://localhost:4000/api/products/search?q=${query}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
       setSearchResults(data);
     } catch (error) {
       console.error("Error searching products:", error);
+      setSearchResults([]); // Clear results on error
     }
   };
 
