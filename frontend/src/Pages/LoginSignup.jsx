@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './CSS/LoginSignup.css';
 import axios from 'axios';
-import { useLocation } from 'react-router-dom';
 
 const LoginSignup = () => {
   const [state, setState] = useState("Login");
@@ -15,25 +14,28 @@ const LoginSignup = () => {
   });
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
-
-  const location = useLocation(); // Get URL params
+  const [tokenFromUrl, setTokenFromUrl] = useState(null);
 
   useEffect(() => {
-    const queryParams = new URLSearchParams(location.search);
-    const tokenFromUrl = queryParams.get('token'); 
-    if (tokenFromUrl) {
-      setFormData(prev => ({ ...prev, resetToken: tokenFromUrl }));
-    }
-  }, [location]);
+    const queryParams = new URLSearchParams(window.location.search);
+    const token = queryParams.get('token');
 
-  // Handle input changes
+    if (token) {
+      setTokenFromUrl(token);
+      setFormData(prev => ({ ...prev, resetToken: token }));
+      setShowForgotPassword(true);
+      setResetEmailSent(true);
+      // Clean the URL without reloading
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
   const changeHandler = (e) => {
     const { name, value } = e.target;
     if (name === 'phonenumber' && value.length > 10) return;
     setFormData({ ...formData, [name]: value });
   };
 
-  // Handle login
   const login = async (e) => {
     e.preventDefault();
     if (!formData.email || !formData.password) {
@@ -59,7 +61,6 @@ const LoginSignup = () => {
     }
   };
 
-  // Handle signup
   const signup = async (e) => {
     e.preventDefault();
     if (!formData.email || !formData.phonenumber || !formData.password || !formData.confirmPassword) {
@@ -87,7 +88,6 @@ const LoginSignup = () => {
     }
   };
 
-  // Handle forgot password request
   const handleForgotPassword = async (e) => {
     e.preventDefault();
     if (!formData.email) {
@@ -112,7 +112,6 @@ const LoginSignup = () => {
     }
   };
 
-  // Handle password reset
   const handlePasswordReset = async (e) => {
     e.preventDefault();
     if (!formData.resetToken || !formData.newPassword || !formData.confirmPassword) {
@@ -133,16 +132,9 @@ const LoginSignup = () => {
 
       if (response.data.success) {
         alert("Password reset successfully!");
-        setShowForgotPassword(false);
+        // Reset all relevant states
+        resetForgotPasswordFlow();
         setState("Login");
-        // Reset form
-        setFormData({
-          ...formData,
-          email: "",
-          newPassword: "",
-          confirmPassword: "",
-          resetToken: ""
-        });
       } else {
         alert(response.data.message || "Password reset failed");
       }
@@ -152,6 +144,19 @@ const LoginSignup = () => {
     }
   };
 
+  const resetForgotPasswordFlow = () => {
+    setShowForgotPassword(false);
+    setResetEmailSent(false);
+    setTokenFromUrl(null);
+    setFormData({
+      ...formData,
+      email: "",
+      newPassword: "",
+      confirmPassword: "",
+      resetToken: ""
+    });
+  };
+
   return (
     <div className='loginsignup'>
       <div className="loginsignup-container">
@@ -159,49 +164,45 @@ const LoginSignup = () => {
           <>
             <h1>{resetEmailSent ? "Reset Password" : "Forgot Password"}</h1>
             {resetEmailSent ? (
-              <div className="loginsignup-fields">
-                <input
-                  name="resetToken"
-                  value={formData.resetToken}
-                  onChange={changeHandler}
-                  type="text"
-                  placeholder="Enter reset token from email"
-                />
-                <input
-                  name="newPassword"
-                  value={formData.newPassword}
-                  onChange={changeHandler}
-                  type="password"
-                  placeholder="New Password"
-                />
-                <input
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={changeHandler}
-                  type="password"
-                  placeholder="Confirm New Password"
-                />
-                <button 
-                  onClick={handlePasswordReset} 
-                  style={{ cursor: 'pointer' }}
-                  className="auth-button"
-                >
-                  Reset Password
-                </button>
-                <p className="loginsignup-login">
-                  Remember your password?{' '}
-                  <span
-                    onClick={() => {
-                      setShowForgotPassword(false);
-                      setResetEmailSent(false);
-                    }}
-                    style={{ cursor: 'pointer', color: '#0066cc' }}
-                  >
-                    Login here
-                  </span>
-                </p>
-              </div>
-            ) : (
+            <div className="loginsignup-fields">
+              {/* Always show token input but pre-fill if from email */}
+              <input
+                name="resetToken"
+                value={formData.resetToken}
+                onChange={changeHandler}
+                type="text"
+                placeholder="Enter reset token from email"
+                readOnly={!!tokenFromUrl} // Make field read-only if token came from URL
+                style={tokenFromUrl ? { backgroundColor: '#f0f0f0' } : {}}
+              />
+              <input
+                name="newPassword"
+                value={formData.newPassword}
+                onChange={changeHandler}
+                type="password"
+                placeholder="New Password"
+              />
+              <input
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={changeHandler}
+                type="password"
+                placeholder="Confirm New Password"
+              />
+              <button 
+                onClick={handlePasswordReset} 
+                className="auth-button"
+              >
+                Reset Password
+              </button>
+              <p className="loginsignup-login">
+                Remember your password?{' '}
+                <span onClick={resetForgotPasswordFlow}>
+                  Login here
+                </span>
+              </p>
+            </div>
+          ) : (
               <div className="loginsignup-fields">
                 <input
                   name="email"
@@ -213,16 +214,12 @@ const LoginSignup = () => {
                 />
                 <button 
                   onClick={handleForgotPassword} 
-                  style={{ cursor: 'pointer' }}
                   className="auth-button"
                 >
                   Send Reset Link
                 </button>
                 <p className="loginsignup-login">
-                  <span
-                    onClick={() => setShowForgotPassword(false)}
-                    style={{ cursor: 'pointer', color: '#0066cc' }}
-                  >
+                  <span onClick={resetForgotPasswordFlow}>
                     Back to Login
                   </span>
                 </p>
