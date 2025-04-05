@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { ShopContext } from '../../Context/ShopContext';
 import './Dashboard.css';
 
@@ -8,47 +7,59 @@ const Profile = () => {
     userProfile, 
     updateUserProfile,
     fetchUserProfile,
-    profileError,
+    isProfileLoading,
+    changePassword,
     setAuthRedirectMessage
   } = useContext(ShopContext);
   
-  const [formData, setFormData] = useState({
-    phonenumber: '',
-    email: ''
-  });
-  const [previewAvatar, setPreviewAvatar] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [formData, setFormData] = useState({ phonenumber: '', email: '' });
   const [successMessage, setSuccessMessage] = useState('');
-  const navigate = useNavigate(); // Now properly used below
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Initialize form with context data
+  // Change Password state
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [passwordSuccess, setPasswordSuccess] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+
+  const updateFormData = useCallback((profile) => {
+    if (profile) {
+      setFormData({
+        phonenumber: profile.phonenumber || '',
+        email: profile.email || ''
+      });
+    }
+  }, []);
+
   useEffect(() => {
-    const loadProfileData = async () => {
+    let isMounted = true;
+    const controller = new AbortController();
+    
+    const loadProfile = async () => {
       try {
-        setAuthRedirectMessage('');
-        setLoading(true);
-        
-        if (!userProfile) {
-          await fetchUserProfile();
+        if (isMounted) setAuthRedirectMessage('');
+        await fetchUserProfile(true);
+      } catch (err) {
+        if (isMounted && err.name !== 'AbortError') {
+          setAuthRedirectMessage('Failed to load profile');
         }
-        
-        if (userProfile) {
-          setFormData({
-            phonenumber: userProfile.phonenumber || '',
-            email: userProfile.email || ''
-          });
-        }
-      } catch (error) {
-        setAuthRedirectMessage('Failed to load profile data');
-        console.error('Profile load error:', error);
-        navigate('/error'); // Using navigate here
-      } finally {
-        setLoading(false);
       }
     };
+    
+    loadProfile();
 
-    loadProfileData();
-  }, [userProfile, fetchUserProfile, setAuthRedirectMessage, navigate]);
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
+  }, [fetchUserProfile, setAuthRedirectMessage]);
+
+  useEffect(() => {
+    updateFormData(userProfile);
+  }, [userProfile, updateFormData]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -58,26 +69,11 @@ const Profile = () => {
     }));
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (!file.type.match('image.*')) {
-        setAuthRedirectMessage('Only image files are allowed');
-        return;
-      }
-      if (file.size > 2 * 1024 * 1024) {
-        setAuthRedirectMessage('File size must be less than 2MB');
-        return;
-      }
-      
-      setAuthRedirectMessage('');
-      setPreviewAvatar(URL.createObjectURL(file));
-    }
-  };
-
+  // Handle Profile Update
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      setIsSubmitting(true);
       setAuthRedirectMessage('');
       setSuccessMessage('');
       
@@ -87,18 +83,39 @@ const Profile = () => {
       
       setSuccessMessage('Profile updated successfully!');
       setTimeout(() => setSuccessMessage(''), 3000);
-      
-      await fetchUserProfile();
     } catch (err) {
       setAuthRedirectMessage(err.message || 'Failed to update profile');
-      console.error('Profile update error:', err);
-      navigate('/error'); // Using navigate here
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  
+  // Handle Password Change
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    setPasswordError('');
+    setPasswordSuccess('');
 
-  if (loading) {
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setPasswordError('New password and confirm password must match');
+      return;
+    }
+
+    try {
+      await changePassword(passwordData.currentPassword, passwordData.newPassword, passwordData.confirmPassword);
+      setPasswordSuccess('Password updated successfully!');
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+      setTimeout(() => setPasswordSuccess(''), 3000);
+    } catch (err) {
+      setPasswordError('Failed to change password. Please try again.');
+    }
+  };
+
+  if (isProfileLoading) {
     return (
       <div className="loading-container">
         <div className="loading-spinner"></div>
@@ -111,43 +128,11 @@ const Profile = () => {
     <div className="dashboard-profile">
       <h2>Profile Settings</h2>
       
-      {profileError && (
-        <div className="error-message">
-          {profileError}
-        </div>
-      )}
+      {successMessage && <div className="success-message">{successMessage}</div>}
+      {passwordSuccess && <div className="success-message">{passwordSuccess}</div>}
+      {passwordError && <div className="error-message">{passwordError}</div>}
       
-      {successMessage && (
-        <div className="success-message">
-          {successMessage}
-        </div>
-      )}
-
       <form onSubmit={handleSubmit}>
-        <div className="avatar-section">
-          <div className="avatar-preview">
-            <img 
-              src={previewAvatar || (userProfile?.avatar || "/default-avatar.png")} 
-              alt="Profile" 
-              onError={(e) => {
-                e.target.src = "/default-avatar.png";
-              }}
-            />
-          </div>
-          <div className="avatar-upload">
-            <input
-              type="file"
-              id="avatar-upload"
-              accept="image/jpeg, image/png, image/gif"
-              onChange={handleFileChange}
-              disabled={loading}
-            />
-            <label htmlFor="avatar-upload">Choose File</label>
-            <p>{previewAvatar ? "Image selected" : "No file chosen"}</p>
-            <small>JPG, PNG or GIF (Max 2MB, 300×300 recommended)</small>
-          </div>
-        </div>
-
         <div className="form-section">
           <div className="form-group">
             <label htmlFor="profile-email">Email Address*</label>
@@ -174,19 +159,62 @@ const Profile = () => {
               required
               pattern="[0-9]{10}"
               title="Please enter a 10-digit phone number"
-              disabled={loading}
+              disabled={isSubmitting}
             />
           </div>
 
           <button 
             type="submit" 
             className="update-btn"
-            disabled={loading}
+            disabled={isSubmitting}
           >
-            {loading ? 'Updating...' : 'Update Profile'}
+            {isSubmitting ? 'Updating...' : 'Update Profile'}
           </button>
         </div>
       </form>
+
+      {/* Change Password Section */}
+      <div className="profile-section">
+        <h3>Change Password</h3>
+        <form onSubmit={handlePasswordChange}>
+          <div className="form-group">
+            <label htmlFor="current-password">Current Password</label>
+            <input
+              type="password"
+              id="current-password"
+              name="currentPassword"
+              value={passwordData.currentPassword}
+              onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="new-password">New Password</label>
+            <input
+              type="password"
+              id="new-password"
+              name="newPassword"
+              value={passwordData.newPassword}
+              onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="confirm-password">Confirm New Password</label>
+            <input
+              type="password"
+              id="confirm-password"
+              name="confirmPassword"
+              value={passwordData.confirmPassword}
+              onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+              required
+            />
+          </div>
+          <button type="submit" className="update-btn">
+            Change Password
+          </button>
+        </form>
+      </div>
     </div>
   );
 };
