@@ -26,22 +26,19 @@ mongoose.connect(process.env.MONGODB_URI || "mongodb+srv://greeshdahal432:gr10gr
 
 // Enhanced User Schema
 const userSchema = new mongoose.Schema({
-  firstName: { type: String, default: '' },
-  lastName: { type: String, default: '' },
   phonenumber: { type: String, unique: true },
   email: { type: String, unique: true },
   password: String,
-  avatar: { type: String, default: '' },
   resetPasswordToken: String,
   resetPasswordExpires: Date,
   emailVerified: { type: Boolean, default: false },
   referrals: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  kyc: {
-    documentType: { type: String, default: '' },
-    documentNumber: { type: String, default: '' },
-    issuedDate: { type: Date, default: null },
-    verified: { type: Boolean, default: false }
-  }
+  // kyc: {
+  //   documentType: { type: String, default: '' },
+  //   documentNumber: { type: String, default: '' },
+  //   issuedDate: { type: Date, default: null },
+  //   verified: { type: Boolean, default: false }
+  // }
 }, { timestamps: true });
 
 // Product Schema
@@ -129,6 +126,7 @@ const authenticate = async (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET || "secret_ecom");
     req.userId = decoded.user.id;
+    req.user = decoded.user;
     next();
   } catch (err) {
     res.status(401).json({ success: false, message: "Invalid token" });
@@ -177,74 +175,82 @@ const generateAuthToken = (userId) => {
 // User Profile Routes
 app.get('/api/user', authenticate, async (req, res) => {
   try {
+    res.set('Cache-Control', 'private, max-age=30');
+    
     const user = await User.findById(req.userId)
-      .select('-password -resetPasswordToken')
-      .populate('referrals', 'firstName lastName email');
-    res.json(user);
+      .select('-password -__v -resetPasswordToken -resetPasswordExpires')
+      .lean();
+
+    res.json({
+      _id: user._id,
+      email: user.email,
+      phonenumber: user.phonenumber,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
+    });
   } catch (err) {
+    console.error("User fetch error:", err);
     res.status(500).json({ error: 'Failed to fetch profile' });
   }
 });
 
-app.put('/api/user/profile', authenticate, upload.single('avatar'), async (req, res) => {
+// Change Password Route
+app.put('/api/user/profile', async (req, res) => {
   try {
-    const updates = {
-      firstName: req.body.firstName,
-      lastName: req.body.lastName,
-      phonenumber: req.body.phone
-    };
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+    const user = await User.findById(req.user.id);  // Assuming you have middleware to set req.user
 
-    if (req.file) {
-      // Delete old avatar if exists
-      const user = await User.findById(req.userId);
-      if (user.avatar) {
-        const oldAvatarPath = path.join(__dirname, 'upload', 'images', path.basename(user.avatar));
-        fs.unlink(oldAvatarPath, (err) => {
-          if (err) console.error('Error deleting old avatar:', err);
-        });
-      }
-      updates.avatar = `/images/${req.file.filename}`;
+    // Check if current password matches
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Current password is incorrect' });
     }
 
-    const updatedUser = await User.findByIdAndUpdate(
-      req.userId,
-      updates,
-      { new: true }
-    ).select('-password');
+    // Check if new password and confirm password match
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ message: 'New passwords do not match' });
+    }
 
-    res.json(updatedUser);
+    // Hash the new password
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+
+    // Save the updated user
+    await user.save();
+    res.status(200).json({ message: 'Password updated successfully' });
   } catch (err) {
-    res.status(500).json({ error: 'Profile update failed' });
+    console.error('Error updating password:', err);
+    res.status(500).json({ message: 'Failed to update password' });
   }
 });
 
 // KYC Routes
-app.put('/api/user/kyc', authenticate, upload.single('document'), async (req, res) => {
-  try {
-    const { documentType, documentNumber, issuedDate } = req.body;
+// app.put('/api/user/kyc', authenticate, upload.single('document'), async (req, res) => {
+//   try {
+//     const { documentType, documentNumber, issuedDate } = req.body;
     
-    const kycData = {
-      documentType,
-      documentNumber,
-      issuedDate: new Date(issuedDate),
-      verified: false
-    };
+//     const kycData = {
+//       documentType,
+//       documentNumber,
+//       issuedDate: new Date(issuedDate),
+//       verified: false
+//     };
 
-    if (req.file) {
-      kycData.documentImage = `/images/${req.file.filename}`;
-    }
+//     if (req.file) {
+//       kycData.documentImage = `/images/${req.file.filename}`;
+//     }
 
-    const user = await User.findByIdAndUpdate(
-      req.userId,
-      { kyc: kycData },
-      { new: true }
-    ).select('-password');
+//     const user = await User.findByIdAndUpdate(
+//       req.userId,
+//       { kyc: kycData },
+//       { new: true }
+//     ).select('-password');
 
-    res.json(user);
-  } catch (err) {
-    res.status(500).json({ error: 'KYC update failed' });
-  }
-});
+//     res.json(user);
+//   } catch (err) {
+//     res.status(500).json({ error: 'KYC update failed' });
+//   }
+// });
 
 // Order Routes
 app.get('/api/user/orders', authenticate, async (req, res) => {
@@ -276,7 +282,7 @@ app.get('/api/user/orders', authenticate, async (req, res) => {
 app.get('/api/user/referrals', authenticate, async (req, res) => {
   try {
     const user = await User.findById(req.userId)
-      .populate('referrals', 'firstName lastName email createdAt')
+      .populate('referrals', 'email createdAt')
       .select('referrals');
     
     res.json(user.referrals);
@@ -288,51 +294,60 @@ app.get('/api/user/referrals', authenticate, async (req, res) => {
 // Auth Routes
 app.post("/signup", async (req, res) => {
   try {
-    const { firstName, lastName, phonenumber, email, password, referralCode } = req.body;
+    const { phonenumber, email, password } = req.body;
     
-    // Validation
-    if (!firstName || !email || !password) {
-      return res.status(400).json({ success: false, message: "Required fields missing" });
+    // Basic validation
+    if (!email || !password || !phonenumber) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Email, phone number and password are required" 
+      });
     }
 
-    // Check existing user
-    const [emailCheck, phoneCheck] = await Promise.all([
-      User.findOne({ email }),
-      phonenumber ? User.findOne({ phonenumber }) : Promise.resolve(null)
-    ]);
+    // Check for existing user
+    const existingUser = await User.findOne({ 
+      $or: [{ email }, { phonenumber }] 
+    });
 
-    if (emailCheck) return res.status(400).json({ success: false, message: "Email exists" });
-    if (phoneCheck) return res.status(400).json({ success: false, message: "Phone exists" });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: existingUser.email === email 
+          ? "Email already exists" 
+          : "Phone number already exists"
+      });
+    }
 
     // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-    
-    // Create user
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Create new user (only with required fields)
     const newUser = await User.create({
-      firstName,
-      lastName,
       phonenumber,
       email,
       password: hashedPassword
     });
 
-    // Handle referral if exists
-    if (referralCode) {
-      const referrer = await User.findOne({ referralCode });
-      if (referrer) {
-        referrer.referrals.push(newUser._id);
-        await referrer.save();
-      }
-    }
+    // Generate token
+    const token = jwt.sign(
+      { user: { id: newUser._id } }, 
+      process.env.JWT_SECRET || "secret_ecom", 
+      { expiresIn: "1h" }
+    );
 
-    res.json({ 
-      success: true, 
-      token: generateAuthToken(newUser._id),
+    res.json({
+      success: true,
+      token,
       userId: newUser._id
     });
+
   } catch (err) {
     console.error("Signup Error:", err);
-    res.status(500).json({ success: false, message: "Server error" });
+    res.status(500).json({ 
+      success: false, 
+      message: "Server error during signup" 
+    });
   }
 });
 
