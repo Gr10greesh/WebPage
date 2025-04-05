@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect, useContext, useCallback, useMemo } from "react";
+import { createContext, useState, useRef, useEffect, useContext, useCallback, useMemo } from "react";
 import axios from "axios";
 
 export const ShopContext = createContext();
@@ -13,6 +13,8 @@ const ShopContextProvider = ({ children }) => {
   const [userId, setUserId] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
 
+  const [isProfileLoading, setIsProfileLoading] = useState(false);
+  const lastFetchTime = useRef(0);
 
   // Enhanced fetch function with error handling
   const fetchData = useCallback(async (url, options = {}) => {
@@ -38,6 +40,24 @@ const ShopContextProvider = ({ children }) => {
     }
   }, []);
 
+  useEffect(() => {
+    const token = localStorage.getItem("auth-token");
+    if (token && !userId) {
+      const getUser = async () => {
+        try {
+          const data = await fetchData("/api/user"); // your user endpoint
+          setUserId(data._id); // or however you identify user
+          setUserProfile(data);
+        } catch (err) {
+          console.error("Auto-login failed", err);
+          localStorage.removeItem("auth-token"); // cleanup if token is invalid
+        }
+      };
+  
+      getUser();
+    }
+  }, [userId, fetchData]);
+
   // Fetch all products
   useEffect(() => {
     const loadProducts = async () => {
@@ -51,18 +71,38 @@ const ShopContextProvider = ({ children }) => {
     loadProducts();
   }, [fetchData]);
 
+  useEffect(() => {
+    // Reset fetch flag when user changes
+    hasFetchedProfile.current = false;
+  }, [userId]);
 
-  const fetchUserProfile = useCallback(async () => {
+  const hasFetchedProfile = useRef(false);
+
+  // Fetch user profile logic (after all hooks)
+  const fetchUserProfile = useCallback(async (forceRefresh = false) => {
+    const now = Date.now();
+    const FETCH_COOLDOWN = 30000; // 30 seconds
+    
+    // Skip if we're still in cooldown period
+    if (!forceRefresh && now - lastFetchTime.current < FETCH_COOLDOWN) {
+      return;
+    }
+  
     try {
+      setIsProfileLoading(true);
+      lastFetchTime.current = now;
       const data = await fetchData("/api/user");
-      setUserProfile(data);
-      return data;
+      setUserProfile(prev => {
+        // Only update if data actually changed
+        return JSON.stringify(prev) === JSON.stringify(data) ? prev : data;
+      });
     } catch (err) {
-      console.error("Failed to fetch profile:", err);
-      throw err;
+      console.error("Profile fetch failed:", err);
+    } finally {
+      setIsProfileLoading(false);
     }
   }, [fetchData]);
-  
+
   const updateUserProfile = useCallback(async (profileData) => {
     try {
       const data = await fetchData("/api/user/profile", {
@@ -76,13 +116,14 @@ const ShopContextProvider = ({ children }) => {
       throw err;
     }
   }, [fetchData]);
-  
-  const changePassword = useCallback(async (currentPassword, newPassword) => {
-    return fetchData("/api/user/change-password", {
-      method: "POST",
-      data: { currentPassword, newPassword }
+
+  const changePassword = useCallback(async (currentPassword, newPassword, confirmPassword) => {
+    return fetchData("/api/user/profile", {
+      method: "PUT",
+      body: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
+      headers: { "Content-Type": "application/json" }
     });
-  }, [fetchData])
+  }, [fetchData]);
 
   const verifyUserToken = useCallback(async () => {
     return fetchData('/api/user/verify-token'); // Just checks if token is valid
@@ -92,7 +133,7 @@ const ShopContextProvider = ({ children }) => {
   const fetchCartFromServer = useCallback(async () => {
     try {
       const { items = [] } = await fetchData("/cart");
-      
+
       const newCartItems = items.reduce((acc, item) => {
         if (item?.productId?._id) {
           acc[item.productId._id] = item.quantity || 1;
@@ -101,8 +142,8 @@ const ShopContextProvider = ({ children }) => {
       }, {});
 
       setCartItems(prev => {
-        return JSON.stringify(prev) !== JSON.stringify(newCartItems) 
-          ? newCartItems 
+        return JSON.stringify(prev) !== JSON.stringify(newCartItems)
+          ? newCartItems
           : prev;
       });
 
@@ -115,7 +156,7 @@ const ShopContextProvider = ({ children }) => {
   // Sync cart to server when changes occur
   const updateCartOnServer = useCallback(async (updatedCart) => {
     if (!localStorage.getItem("auth-token")) return;
-    
+
     try {
       await fetchData("/update-cart", {
         method: "post",
@@ -141,7 +182,7 @@ const ShopContextProvider = ({ children }) => {
     const qty = Number(quantity) || 0;
 
     setCartItems(prev => {
-      const updatedCart = qty <= 0 
+      const updatedCart = qty <= 0
         ? (() => {
             const { [idStr]: _, ...rest } = prev;
             return rest;
@@ -156,9 +197,9 @@ const ShopContextProvider = ({ children }) => {
   const addToCart = useCallback((productId) => {
     const idStr = String(productId);
     setCartItems(prev => {
-      const updatedCart = { 
-        ...prev, 
-        [idStr]: (prev[idStr] || 0) + 1 
+      const updatedCart = {
+        ...prev,
+        [idStr]: (prev[idStr] || 0) + 1
       };
       updateCartOnServer(updatedCart);
       return updatedCart;
@@ -179,7 +220,7 @@ const ShopContextProvider = ({ children }) => {
       return total + (product?.new_price || 0) * quantity;
     }, 0);
   }, [cartItems, allProducts]);
-  
+
   const getTotalCartItems = useCallback(() => {
     return Object.values(cartItems).reduce((total, count) => total + count, 0);
   }, [cartItems]);
@@ -228,6 +269,7 @@ const ShopContextProvider = ({ children }) => {
     userProfile,
     updateUserProfile,
     verifyUserToken,
+    isProfileLoading,
     changePassword
   }), [
     allProducts,
@@ -251,6 +293,7 @@ const ShopContextProvider = ({ children }) => {
     userProfile,
     updateUserProfile,
     verifyUserToken,
+    isProfileLoading,
     changePassword
   ]);
 
