@@ -159,60 +159,6 @@ body {
   font-weight: 600;
 }
 
-/* Avatar Section */
-.avatar-section {
-  display: flex;
-  gap: 2rem;
-  align-items: center;
-  margin-bottom: 2rem;
-  padding: 1.5rem;
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.06);
-}
-
-.avatar-preview {
-  position: relative;
-}
-
-.avatar-preview img {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 3px solid #eaeaea;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.avatar-upload {
-  flex: 1;
-}
-
-.avatar-upload label {
-  display: inline-block;
-  padding: 0.6rem 1.4rem;
-  background: #4a6baf;
-  color: white;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: background 0.3s;
-}
-
-.avatar-upload label:hover {
-  background: #3a5a9f;
-}
-
-.avatar-upload p {
-  margin: 0.5rem 0;
-  color: #555;
-}
-
-.avatar-upload small {
-  color: #95a5a6;
-  font-size: 0.8rem;
-}
-
 /* Form Elements */
 .form-section {
   background: #ffffff;
@@ -309,6 +255,78 @@ body {
   background-color: #f0f4ff;
   color: #4a6baf;
 }
+
+/* Change Password Section */
+.profile-section {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.06);
+  margin-top: 2rem;
+}
+
+.profile-section h3 {
+  font-size: 1.6rem;
+  color: #34495e;
+  margin-bottom: 1.5rem;
+}
+
+.profile-section .form-group {
+  margin-bottom: 1.5rem;
+}
+
+.profile-section .form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #7f8c8d;
+}
+
+.profile-section .form-group input {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: border 0.3s;
+}
+
+.profile-section .form-group input:focus {
+  border-color: #4a6baf;
+  outline: none;
+}
+
+.profile-section .update-btn {
+  background: #4a6baf;
+  color: white;
+  border: none;
+  padding: 0.8rem 2rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s;
+  margin-top: 1rem;
+}
+
+.profile-section .update-btn:hover {
+  background: #3a5a9f;
+}
+
+.profile-section .error-message,
+.profile-section .success-message {
+  text-align: center;
+  margin-top: 1rem;
+  font-weight: bold;
+}
+
+.profile-section .error-message {
+  color: #e74c3c;
+}
+
+.profile-section .success-message {
+  color: #2ecc71;
+}
+
 
 
 /* Footer Section */
