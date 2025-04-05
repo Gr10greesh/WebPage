@@ -40,10 +40,6 @@ const OrderHistory = () => {
   return (
     <div className="order-history-container">
       <div className="order-sidebar">
-        <div className="user-card">
-          <img src="/default-avatar.png" alt="Profile" className="profile-avatar" />
-          <h3>Order History</h3>
-        </div>
       </div>
 
       <div className="order-content">
