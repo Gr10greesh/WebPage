@@ -176,40 +176,38 @@ const Navbar = () => {
       <div className="nav-login-cart">
         {localStorage.getItem("auth-token") ? (
           <div className="user-menu-container">
-            <button
-              className="user-menu-button"
-              onClick={() => setShowUserMenu(!showUserMenu)}
-            >
-              <img
-                src={userData?.avatar || "/default-avatar.png"}
-                alt="Profile"
-                className="user-avatar"
-              />
-            </button>
+  <button
+    className="user-menu-button"
+    onClick={() => setShowUserMenu(!showUserMenu)}
+  >
+<FiUser className="user-icon" />
+<span>Profile</span>
+<span className={`arrow ${showUserMenu ? "rotate" : ""}`}>▼</span>
+  </button>
 
-            {showUserMenu && (
-              <div className="user-dropdown">
-                <div className="user-info">
-                  <p className="user-name">{userData?.firstName || 'User'}</p>
-                  <p className="user-email">{userData?.email}</p>
-                </div>
-                <div className="dropdown-links">
-                  <Link to="/dashboard" onClick={() => setShowUserMenu(false)}>
-                    <FiLayout className="icon" /> Dashboard
-                  </Link>
-                  <Link to="/dashboard/profile" onClick={() => setShowUserMenu(false)}>
-                    <FiUser className="icon" /> Profile
-                  </Link>
-                  <Link to="/dashboard/orders" onClick={() => setShowUserMenu(false)}>
-                    <FiShoppingBag className="icon" /> Orders
-                  </Link>
-                  <button onClick={handleLogout}>
-                    <FiLogOut className="icon" /> Logout
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+  {showUserMenu && (
+    <div className="user-dropdown">
+      <div className="user-info">
+        <p className="user-name">{userData?.firstName || 'User'}</p>
+        <p className="user-email">{userData?.email}</p>
+      </div>
+      <div className="dropdown-links">
+        <Link to="/dashboard" onClick={() => setShowUserMenu(false)}>
+          <FiLayout className="icon" /> Dashboard
+        </Link>
+        <Link to="/dashboard/profile" onClick={() => setShowUserMenu(false)}>
+          <FiUser className="icon" /> Profile
+        </Link>
+        <Link to="/dashboard/orders" onClick={() => setShowUserMenu(false)}>
+          <FiShoppingBag className="icon" /> Orders
+        </Link>
+        <button onClick={handleLogout}>
+          <FiLogOut className="icon" /> Logout
+        </button>
+      </div>
+    </div>
+  )}
+</div>
         ) : (
           <Link to="/login">
             <button>Login</button>
