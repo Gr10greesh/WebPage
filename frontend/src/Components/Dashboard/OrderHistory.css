@@ -1,0 +1,143 @@
+.order-history-container {
+    display: flex;
+    min-height: 100vh;
+    background: #f8f9fa;
+    gap: 2rem;
+    padding: 1.5rem;
+  }
+  
+  .order-sidebar {
+    width: 280px;
+    background: white;
+    padding: 2rem;
+    box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    border-radius: 8px;
+  }
+  
+  .order-content {
+    flex: 1;
+    padding: 2rem;
+    background: white;
+    margin: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.1);
+  }
+
+  .order-content h2 {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 2rem;
+  }
+  
+  .order-card {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    margin-bottom: 1.5rem; 
+    overflow: hidden;
+    background-color: #fff;
+    transition: all 0.3s ease;
+  }
+
+  .order-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  }
+  
+  .order-header {
+    display: flex;
+    justify-content: space-between;
+    padding: 1rem;
+    cursor: pointer;
+    background: #f9f9f9;
+  }
+  
+  .order-details {
+    padding: 1rem;
+    border-top: 1px solid #eee;
+    background: white;
+  }
+  
+  .order-item {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  
+  .order-item img {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 4px;
+  }
+  
+  .status-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+  
+  .status-badge.completed {
+    background: #d4edda;
+    color: #155724;
+  }
+  
+  .status-badge.processing {
+    background: #fff3cd;
+    color: #856404;
+  }
+  
+  .status-badge.shipped {
+    background: #cce5ff;
+    color: #004085;
+  }
+  
+  .order-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+  
+  .order-actions button {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .track-button {
+    background: #007bff;
+    color: white;
+  }
+  
+  .return-button {
+    background: #f8f9fa;
+    border: 1px solid #ddd !important;
+  }
+  
+  .no-orders {
+    text-align: center;
+    padding: 2rem;
+  }
+
+  
+.no-orders p {
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: #777;
+}
+  
+.shop-button {
+  margin-top: 1rem;
+  padding: 0.8rem 1.5rem;
+  background: #007bff;
+  color: #fff;
+  border-radius: 4px;
+  text-decoration: none;
+  text-align: center;
+  font-size: 1rem;
+}
+
