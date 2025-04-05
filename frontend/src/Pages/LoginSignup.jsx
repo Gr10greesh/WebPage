@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { ShopContext } from '../Context/ShopContext';
 import './CSS/LoginSignup.css';
 import axios from 'axios';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const LoginSignup = () => {
   const [state, setState] = useState("Login");
@@ -15,6 +17,11 @@ const LoginSignup = () => {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
   const [tokenFromUrl, setTokenFromUrl] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const { setUserId, fetchUserProfile, setAuthRedirectMessage } = useContext(ShopContext);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from?.pathname || '/';
 
   useEffect(() => {
     const queryParams = new URLSearchParams(window.location.search);
@@ -25,7 +32,6 @@ const LoginSignup = () => {
       setFormData(prev => ({ ...prev, resetToken: token }));
       setShowForgotPassword(true);
       setResetEmailSent(true);
-      // Clean the URL without reloading
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, []);
@@ -38,8 +44,10 @@ const LoginSignup = () => {
 
   const login = async (e) => {
     e.preventDefault();
+    setLoading(true);
     if (!formData.email || !formData.password) {
       alert("Please fill all required fields");
+      setLoading(false);
       return;
     }
 
@@ -51,25 +59,32 @@ const LoginSignup = () => {
 
       if (response.data.success) {
         localStorage.setItem('auth-token', response.data.token);
-        window.location.replace("/");
+        setUserId(response.data.userId);
+        await fetchUserProfile(); // NEW: Fetch user profile data
+        navigate(from, { replace: true }); // NEW: Better navigation
       } else {
         alert(response.data.errors || "Invalid credentials");
       }
     } catch (error) {
       console.error("Error during login:", error);
       alert("An error occurred. Please try again later.");
+    } finally {
+      setLoading(false);
     }
   };
 
   const signup = async (e) => {
     e.preventDefault();
+    setLoading(true);
     if (!formData.email || !formData.phonenumber || !formData.password || !formData.confirmPassword) {
       alert("Please fill all required fields");
+      setLoading(false);
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
       alert("Passwords do not match");
+      setLoading(false);
       return;
     }
 
@@ -78,13 +93,17 @@ const LoginSignup = () => {
 
       if (response.data.success) {
         localStorage.setItem('auth-token', response.data.token);
-        window.location.replace("/");
+        setUserId(response.data.userId);
+        await fetchUserProfile(); // NEW: Fetch user profile data
+        navigate(from, { replace: true }); // NEW: Better navigation
       } else {
         alert(response.data.errors);
       }
     } catch (error) {
       console.error("Error during signup:", error);
       alert("An error occurred. Please try again later.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -157,6 +176,15 @@ const LoginSignup = () => {
     });
   };
 
+  const { authRedirectMessage} = useContext(ShopContext);
+
+  useEffect(() => {
+    if (authRedirectMessage) {
+      alert(authRedirectMessage);
+      setAuthRedirectMessage('');
+    }
+  }, [authRedirectMessage, setAuthRedirectMessage]);
+
   return (
     <div className='loginsignup'>
       <div className="loginsignup-container">
@@ -164,45 +192,45 @@ const LoginSignup = () => {
           <>
             <h1>{resetEmailSent ? "Reset Password" : "Forgot Password"}</h1>
             {resetEmailSent ? (
-            <div className="loginsignup-fields">
-              {/* Always show token input but pre-fill if from email */}
-              <input
-                name="resetToken"
-                value={formData.resetToken}
-                onChange={changeHandler}
-                type="text"
-                placeholder="Enter reset token from email"
-                readOnly={!!tokenFromUrl} // Make field read-only if token came from URL
-                style={tokenFromUrl ? { backgroundColor: '#f0f0f0' } : {}}
-              />
-              <input
-                name="newPassword"
-                value={formData.newPassword}
-                onChange={changeHandler}
-                type="password"
-                placeholder="New Password"
-              />
-              <input
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={changeHandler}
-                type="password"
-                placeholder="Confirm New Password"
-              />
-              <button 
-                onClick={handlePasswordReset} 
-                className="auth-button"
-              >
-                Reset Password
-              </button>
-              <p className="loginsignup-login">
-                Remember your password?{' '}
-                <span onClick={resetForgotPasswordFlow}>
-                  Login here
-                </span>
-              </p>
-            </div>
-          ) : (
+              <div className="loginsignup-fields">
+                <input
+                  name="resetToken"
+                  value={formData.resetToken}
+                  onChange={changeHandler}
+                  type="text"
+                  placeholder="Enter reset token from email"
+                  readOnly={!!tokenFromUrl}
+                  style={tokenFromUrl ? { backgroundColor: '#f0f0f0' } : {}}
+                />
+                <input
+                  name="newPassword"
+                  value={formData.newPassword}
+                  onChange={changeHandler}
+                  type="password"
+                  placeholder="New Password"
+                />
+                <input
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={changeHandler}
+                  type="password"
+                  placeholder="Confirm New Password"
+                />
+                <button 
+                  onClick={handlePasswordReset} 
+                  className="auth-button"
+                  disabled={loading}
+                >
+                  {loading ? 'Processing...' : 'Reset Password'}
+                </button>
+                <p className="loginsignup-login">
+                  Remember your password?{' '}
+                  <span onClick={resetForgotPasswordFlow}>
+                    Login here
+                  </span>
+                </p>
+              </div>
+            ) : (
               <div className="loginsignup-fields">
                 <input
                   name="email"
@@ -215,8 +243,9 @@ const LoginSignup = () => {
                 <button 
                   onClick={handleForgotPassword} 
                   className="auth-button"
+                  disabled={loading}
                 >
-                  Send Reset Link
+                  {loading ? 'Sending...' : 'Send Reset Link'}
                 </button>
                 <p className="loginsignup-login">
                   <span onClick={resetForgotPasswordFlow}>
@@ -295,8 +324,9 @@ const LoginSignup = () => {
             <button
               onClick={(e) => state === "Login" ? login(e) : signup(e)}
               className="auth-button"
+              disabled={loading}
             >
-              Continue
+              {loading ? 'Processing...' : 'Continue'}
             </button>
             {state === "Sign Up" ? (
               <p className="loginsignup-login">
