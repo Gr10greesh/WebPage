@@ -8,99 +8,157 @@ const ShopContextProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState({});
   const [searchResults, setSearchResults] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [authRedirectMessage, setAuthRedirectMessage] = useState("");
+  const [userId, setUserId] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
 
-  // Fetch all products from the API
-  useEffect(() => {
-    axios
-      .get("http://localhost:4000/allproducts")
-      .then((response) => {
-        setAllProducts(response.data);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error("Error fetching products:", error);
-        setLoading(false);
-      });
-  }, []);
 
-  // Memoized fetch cart function
-  const fetchCartFromServer = useCallback(async () => {
-    const token = localStorage.getItem("auth-token");
-    if (token) {
-      try {
-        const response = await axios.get("http://localhost:4000/cart", { 
-          headers: { "auth-token": token } 
-        });
-        
-        if (response.data?.success) {
-          const cart = {};
-          response.data.items?.forEach((item) => {
-            if (item?.productId?._id) {  
-              cart[item.productId._id] = item.quantity || 1;
-            }
-          });
-          
-          // Only update state if cart actually changed
-          if (JSON.stringify(cart) !== JSON.stringify(cartItems)) {
-            setCartItems(cart);
-          }
+  // Enhanced fetch function with error handling
+  const fetchData = useCallback(async (url, options = {}) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await axios({
+        method: options.method || "get",
+        url: `http://localhost:4000${url}`,
+        data: options.data,
+        headers: {
+          "auth-token": localStorage.getItem("auth-token"),
+          ...options.headers
         }
-        return response.data?.items || [];
-      } catch (error) {
-        console.error("Error fetching cart:", error);
-        return [];
-      }
-    }
-    return [];
-  }, [cartItems]);
-
-  // Save cart to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify(cartItems));
-  }, [cartItems]);
-
-  const updateCartOnServer = useCallback((updatedCart) => {
-    const token = localStorage.getItem("auth-token");
-    if (token) {
-      axios
-        .post("http://localhost:4000/update-cart", 
-          { cartItems: updatedCart }, 
-          { headers: { "auth-token": token } }
-        )
-        .catch((error) => console.error("Error updating cart:", error));
+      });
+      return response.data;
+    } catch (err) {
+      console.error(`API Error (${url}):`, err);
+      setError(err.response?.data?.message || "An error occurred");
+      throw err;
+    } finally {
+      setLoading(false);
     }
   }, []);
 
+  // Fetch all products
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const data = await fetchData("/allproducts");
+        setAllProducts(data);
+      } catch {
+        // Error already handled by fetchData
+      }
+    };
+    loadProducts();
+  }, [fetchData]);
+
+
+  const fetchUserProfile = useCallback(async () => {
+    try {
+      const data = await fetchData("/api/user");
+      setUserProfile(data);
+      return data;
+    } catch (err) {
+      console.error("Failed to fetch profile:", err);
+      throw err;
+    }
+  }, [fetchData]);
+  
+  const updateUserProfile = useCallback(async (profileData) => {
+    try {
+      const data = await fetchData("/api/user/profile", {
+        method: "PUT",
+        data: profileData
+      });
+      setUserProfile(data);
+      return data;
+    } catch (err) {
+      console.error("Failed to update profile:", err);
+      throw err;
+    }
+  }, [fetchData]);
+  
+  const changePassword = useCallback(async (currentPassword, newPassword) => {
+    return fetchData("/api/user/change-password", {
+      method: "POST",
+      data: { currentPassword, newPassword }
+    });
+  }, [fetchData])
+
+  const verifyUserToken = useCallback(async () => {
+    return fetchData('/api/user/verify-token'); // Just checks if token is valid
+  }, [fetchData]);
+
+  // Cart management functions
+  const fetchCartFromServer = useCallback(async () => {
+    try {
+      const { items = [] } = await fetchData("/cart");
+      
+      const newCartItems = items.reduce((acc, item) => {
+        if (item?.productId?._id) {
+          acc[item.productId._id] = item.quantity || 1;
+        }
+        return acc;
+      }, {});
+
+      setCartItems(prev => {
+        return JSON.stringify(prev) !== JSON.stringify(newCartItems) 
+          ? newCartItems 
+          : prev;
+      });
+
+      return items;
+    } catch {
+      return [];
+    }
+  }, [fetchData]);
+
+  // Sync cart to server when changes occur
+  const updateCartOnServer = useCallback(async (updatedCart) => {
+    if (!localStorage.getItem("auth-token")) return;
+    
+    try {
+      await fetchData("/update-cart", {
+        method: "post",
+        data: { cartItems: updatedCart }
+      });
+    } catch {
+      // Error already handled by fetchData
+    }
+  }, [fetchData]);
+
+  // Cart operations
   const removeFromCart = useCallback((productId) => {
     const idStr = String(productId);
-    setCartItems((prevCart) => {
-      const updatedCart = { ...prevCart };
-      delete updatedCart[idStr];
-      updateCartOnServer(updatedCart);
-      return updatedCart;
+    setCartItems(prev => {
+      const { [idStr]: _, ...rest } = prev;
+      updateCartOnServer(rest);
+      return rest;
     });
   }, [updateCartOnServer]);
 
   const updateQuantity = useCallback((productId, quantity) => {
     const idStr = String(productId);
-    if (quantity <= 0) {
-      removeFromCart(idStr);
-      return;
-    }
+    const qty = Number(quantity) || 0;
 
-    setCartItems((prevCart) => {
-      const updatedCart = { ...prevCart, [idStr]: quantity };
+    setCartItems(prev => {
+      const updatedCart = qty <= 0 
+        ? (() => {
+            const { [idStr]: _, ...rest } = prev;
+            return rest;
+          })()
+        : { ...prev, [idStr]: qty };
+
       updateCartOnServer(updatedCart);
       return updatedCart;
     });
-  }, [removeFromCart, updateCartOnServer]);
+  }, [updateCartOnServer]);
 
   const addToCart = useCallback((productId) => {
     const idStr = String(productId);
-    setCartItems((prevCart) => {
+    setCartItems(prev => {
       const updatedCart = { 
-        ...prevCart, 
-        [idStr]: (prevCart[idStr] || 0) + 1 
+        ...prev, 
+        [idStr]: (prev[idStr] || 0) + 1 
       };
       updateCartOnServer(updatedCart);
       return updatedCart;
@@ -109,23 +167,19 @@ const ShopContextProvider = ({ children }) => {
 
   const clearCart = useCallback(() => {
     setCartItems({});
-    const token = localStorage.getItem("auth-token");
-    if (token) {
-      axios
-        .post("http://localhost:4000/clear-cart", {}, { 
-          headers: { "auth-token": token } 
-        })
-        .catch((error) => console.error("Error clearing cart:", error));
+    if (localStorage.getItem("auth-token")) {
+      fetchData("/clear-cart", { method: "post" }).catch(() => {});
     }
-  }, []);
+  }, [fetchData]);
 
+  // Derived cart values
   const getTotalCartAmount = useCallback(() => {
-    return Object.keys(cartItems).reduce((total, productId) => {
-      const product = allProducts.find((p) => p._id === productId);
-      return product ? total + product.new_price * cartItems[productId] : total;
+    return Object.entries(cartItems).reduce((total, [productId, quantity]) => {
+      const product = allProducts.find(p => p._id === productId);
+      return total + (product?.new_price || 0) * quantity;
     }, 0);
   }, [cartItems, allProducts]);
-
+  
   const getTotalCartItems = useCallback(() => {
     return Object.values(cartItems).reduce((total, count) => total + count, 0);
   }, [cartItems]);
@@ -139,9 +193,21 @@ const ShopContextProvider = ({ children }) => {
       .filter(Boolean);
   }, [cartItems, allProducts]);
 
-  // Memoized context value
+  // Search functionality
+  const searchProducts = useCallback(async (query) => {
+    try {
+      const results = await fetchData(`/api/products/search?q=${encodeURIComponent(query)}`);
+      setSearchResults(results);
+    } catch {
+      setSearchResults([]);
+    }
+  }, [fetchData]);
+
+  // Context value
   const contextValue = useMemo(() => ({
     allProducts,
+    userId,
+    setUserId,
     cartItems,
     addToCart,
     removeFromCart,
@@ -151,11 +217,22 @@ const ShopContextProvider = ({ children }) => {
     getTotalCartItems,
     getCartProducts,
     loading,
+    error,
     fetchCartFromServer,
     searchResults,
-    setSearchResults
+    setSearchResults,
+    searchProducts,
+    authRedirectMessage,
+    setAuthRedirectMessage,
+    fetchUserProfile,
+    userProfile,
+    updateUserProfile,
+    verifyUserToken,
+    changePassword
   }), [
     allProducts,
+    userId,
+    setUserId,
     cartItems,
     addToCart,
     removeFromCart,
@@ -165,8 +242,16 @@ const ShopContextProvider = ({ children }) => {
     getTotalCartItems,
     getCartProducts,
     loading,
+    error,
     fetchCartFromServer,
-    searchResults
+    searchResults,
+    searchProducts,
+    authRedirectMessage,
+    fetchUserProfile,
+    userProfile,
+    updateUserProfile,
+    verifyUserToken,
+    changePassword
   ]);
 
   return (
