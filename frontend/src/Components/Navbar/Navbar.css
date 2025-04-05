@@ -187,7 +187,121 @@
   .nav-dropdown.rotate {
     transform: rotate(90deg);
   }
+
+  /* Account Dropdown Styles */
+.account-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.account-button {
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.dropdown-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 10px;
+  min-width: 150px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  display: none;
+  z-index: 100;
+}
+
+.account-dropdown:hover .dropdown-menu {
+  display: block;
+}
+
+.dropdown-menu a, 
+.dropdown-menu button {
+  display: block;
+  width: 100%;
+  padding: 8px 0;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.dropdown-menu a:hover,
+.dropdown-menu button:hover {
+  background: #f5f5f5;
+}
   
+/* Navbar.css */
+.user-menu-container {
+  position: relative;
+  margin-left: 15px;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  object-fit: cover;
+  border: 2px solid #ddd;
+}
+
+.user-dropdown {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  width: 250px;
+  background: white;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  z-index: 100;
+  padding: 15px;
+}
+
+.user-info {
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 10px;
+}
+
+.user-name {
+  font-weight: 600;
+  margin: 0;
+}
+
+.user-email {
+  color: #666;
+  font-size: 0.9em;
+  margin: 5px 0 0 0;
+}
+
+.dropdown-links a, 
+.dropdown-links button {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  color: #333;
+  text-decoration: none;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.dropdown-links a:hover,
+.dropdown-links button:hover {
+  color: #0066cc;
+}
+
+.dropdown-links svg {
+  margin-right: 10px;
+  width: 18px;
+}
   /* ===== Responsive Styles ===== */
   @media (max-width: 1024px) {
     .navbar {
