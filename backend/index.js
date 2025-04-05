@@ -8,6 +8,7 @@ const multer = require("multer");
 const path = require("path");
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+const fs = require('fs');
 
 // Initialize app and config
 dotenv.config();
@@ -23,15 +24,27 @@ mongoose.connect(process.env.MONGODB_URI || "mongodb+srv://greeshdahal432:gr10gr
   .then(() => console.log("MongoDB Connected"))
   .catch(err => console.error("MongoDB Connection Error:", err));
 
-// Schemas
+// Enhanced User Schema
 const userSchema = new mongoose.Schema({
+  firstName: { type: String, default: '' },
+  lastName: { type: String, default: '' },
   phonenumber: { type: String, unique: true },
   email: { type: String, unique: true },
   password: String,
+  avatar: { type: String, default: '' },
   resetPasswordToken: String,
-  resetPasswordExpires: Date
+  resetPasswordExpires: Date,
+  emailVerified: { type: Boolean, default: false },
+  referrals: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  kyc: {
+    documentType: { type: String, default: '' },
+    documentNumber: { type: String, default: '' },
+    issuedDate: { type: Date, default: null },
+    verified: { type: Boolean, default: false }
+  }
 }, { timestamps: true });
 
+// Product Schema
 const productSchema = new mongoose.Schema({
   id: { type: Number, required: true, unique: true },
   name: { type: String, required: true },
@@ -43,6 +56,7 @@ const productSchema = new mongoose.Schema({
   available: { type: Boolean, default: true }
 });
 
+// Cart Schema
 const cartSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   items: [{
@@ -51,10 +65,75 @@ const cartSchema = new mongoose.Schema({
   }]
 }, { timestamps: true });
 
+// Enhanced Order Schema
+const orderSchema = new mongoose.Schema({
+  userId: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User', 
+    required: true 
+  },
+  items: [{
+    productId: { 
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: 'Product',
+      required: true
+    },
+    quantity: {
+      type: Number,
+      required: true,
+      min: 1
+    },
+    price: {
+      type: Number,
+      required: true
+    },
+    name: {
+      type: String,
+      required: true
+    }
+  }],
+  status: { 
+    type: String,
+    enum: ['processing', 'shipped', 'delivered', 'cancelled'],
+    default: 'processing'
+  },
+  total: {
+    type: Number,
+    required: true
+  },
+  shippingAddress: {
+    type: String,
+    required: true
+  },
+  paymentMethod: {
+    type: String,
+    required: true
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
 // Models
 const User = mongoose.model("User", userSchema);
 const Product = mongoose.model("Product", productSchema);
 const Cart = mongoose.model("Cart", cartSchema);
+const Order = mongoose.model("Order", orderSchema);
+
+// Authentication Middleware
+const authenticate = async (req, res, next) => {
+  try {
+    const token = req.header("auth-token");
+    if (!token) return res.status(401).json({ success: false, message: "Unauthorized" });
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "secret_ecom");
+    req.userId = decoded.user.id;
+    next();
+  } catch (err) {
+    res.status(401).json({ success: false, message: "Invalid token" });
+  }
+};
 
 // Email Configuration
 const transporter = nodemailer.createTransport({
@@ -73,7 +152,19 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({ storage });
+
+const upload = multer({ 
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed!'), false);
+    }
+  }
+});
+
 app.use("/images", express.static("upload/images"));
 
 // Utility Functions
@@ -81,40 +172,163 @@ const generateAuthToken = (userId) => {
   return jwt.sign({ user: { id: userId } }, process.env.JWT_SECRET || "secret_ecom", { expiresIn: "1h" });
 };
 
-// Routes
-app.post("/upload", upload.single("product"), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ success: 0, message: "No file uploaded" });
+// ==================== ROUTES ====================
+
+// User Profile Routes
+app.get('/api/user', authenticate, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId)
+      .select('-password -resetPasswordToken')
+      .populate('referrals', 'firstName lastName email');
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch profile' });
   }
-  res.json({
-    success: 1,
-    image_url: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`,
-  });
+});
+
+app.put('/api/user/profile', authenticate, upload.single('avatar'), async (req, res) => {
+  try {
+    const updates = {
+      firstName: req.body.firstName,
+      lastName: req.body.lastName,
+      phonenumber: req.body.phone
+    };
+
+    if (req.file) {
+      // Delete old avatar if exists
+      const user = await User.findById(req.userId);
+      if (user.avatar) {
+        const oldAvatarPath = path.join(__dirname, 'upload', 'images', path.basename(user.avatar));
+        fs.unlink(oldAvatarPath, (err) => {
+          if (err) console.error('Error deleting old avatar:', err);
+        });
+      }
+      updates.avatar = `/images/${req.file.filename}`;
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.userId,
+      updates,
+      { new: true }
+    ).select('-password');
+
+    res.json(updatedUser);
+  } catch (err) {
+    res.status(500).json({ error: 'Profile update failed' });
+  }
+});
+
+// KYC Routes
+app.put('/api/user/kyc', authenticate, upload.single('document'), async (req, res) => {
+  try {
+    const { documentType, documentNumber, issuedDate } = req.body;
+    
+    const kycData = {
+      documentType,
+      documentNumber,
+      issuedDate: new Date(issuedDate),
+      verified: false
+    };
+
+    if (req.file) {
+      kycData.documentImage = `/images/${req.file.filename}`;
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.userId,
+      { kyc: kycData },
+      { new: true }
+    ).select('-password');
+
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: 'KYC update failed' });
+  }
+});
+
+// Order Routes
+app.get('/api/user/orders', authenticate, async (req, res) => {
+  try {
+    const orders = await Order.find({ userId: req.userId })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const formattedOrders = orders.map(order => ({
+      ...order,
+      createdAt: new Date(order.createdAt).toLocaleDateString(),
+      items: order.items.map(item => ({
+        ...item,
+        product: {
+          name: item.name,
+          image: item.productId?.image || '',
+          price: item.price
+        }
+      }))
+    }));
+
+    res.json(formattedOrders);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch orders' });
+  }
+});
+
+// Referral Routes
+app.get('/api/user/referrals', authenticate, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId)
+      .populate('referrals', 'firstName lastName email createdAt')
+      .select('referrals');
+    
+    res.json(user.referrals);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch referrals' });
+  }
 });
 
 // Auth Routes
 app.post("/signup", async (req, res) => {
   try {
-    const { phonenumber, email, password } = req.body;
+    const { firstName, lastName, phonenumber, email, password, referralCode } = req.body;
     
-    if (!phonenumber || !email || !password) {
-      return res.status(400).json({ success: false, message: "All fields are required" });
+    // Validation
+    if (!firstName || !email || !password) {
+      return res.status(400).json({ success: false, message: "Required fields missing" });
     }
 
+    // Check existing user
     const [emailCheck, phoneCheck] = await Promise.all([
       User.findOne({ email }),
-      User.findOne({ phonenumber })
+      phonenumber ? User.findOne({ phonenumber }) : Promise.resolve(null)
     ]);
 
-    if (emailCheck) return res.status(400).json({ success: false, message: "Email already exists" });
-    if (phoneCheck) return res.status(400).json({ success: false, message: "Phone number already exists" });
+    if (emailCheck) return res.status(400).json({ success: false, message: "Email exists" });
+    if (phoneCheck) return res.status(400).json({ success: false, message: "Phone exists" });
 
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = await User.create({ phonenumber, email, password: hashedPassword });
+    
+    // Create user
+    const newUser = await User.create({
+      firstName,
+      lastName,
+      phonenumber,
+      email,
+      password: hashedPassword
+    });
+
+    // Handle referral if exists
+    if (referralCode) {
+      const referrer = await User.findOne({ referralCode });
+      if (referrer) {
+        referrer.referrals.push(newUser._id);
+        await referrer.save();
+      }
+    }
 
     res.json({ 
       success: true, 
-      token: generateAuthToken(newUser.id) 
+      token: generateAuthToken(newUser._id),
+      userId: newUser._id
     });
   } catch (err) {
     console.error("Signup Error:", err);
@@ -127,7 +341,7 @@ app.post("/login", async (req, res) => {
     const { email, password } = req.body;
     
     if (!email || !password) {
-      return res.status(400).json({ success: false, message: "All fields are required" });
+      return res.status(400).json({ success: false, message: "Credentials required" });
     }
 
     const user = await User.findOne({ email });
@@ -138,7 +352,8 @@ app.post("/login", async (req, res) => {
 
     res.json({ 
       success: true, 
-      token: generateAuthToken(user.id) 
+      token: generateAuthToken(user._id),
+      userId: user._id
     });
   } catch (err) {
     console.error("Login Error:", err);
@@ -319,21 +534,7 @@ app.get("/api/products/search", async (req, res) => {
     console.error("Search error:", err);
     res.status(500).json({ error: "Failed to search products" });
   }
-})
-
-// Cart Routes
-const authenticate = async (req, res, next) => {
-  try {
-    const token = req.header("auth-token");
-    if (!token) return res.status(401).json({ success: false, message: "Unauthorized" });
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "secret_ecom");
-    req.userId = decoded.user.id;
-    next();
-  } catch (err) {
-    res.status(401).json({ success: false, message: "Invalid token" });
-  }
-};
+});
 
 app.post("/update-cart", authenticate, async (req, res) => {
   try {
@@ -377,6 +578,8 @@ app.post("/clear-cart", authenticate, async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
+
+
 
 // Start Server
 app.listen(port, () => {
