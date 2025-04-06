@@ -120,7 +120,7 @@ const ShopContextProvider = ({ children }) => {
   const changePassword = useCallback(async (currentPassword, newPassword, confirmPassword) => {
     return fetchData("/api/user/profile", {
       method: "PUT",
-      body: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
+      data: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
       headers: { "Content-Type": "application/json" }
     });
   }, [fetchData]);
