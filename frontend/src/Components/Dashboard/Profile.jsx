@@ -11,6 +11,8 @@ const Profile = () => {
     changePassword,
     setAuthRedirectMessage
   } = useContext(ShopContext);
+
+
   
   const [formData, setFormData] = useState({ phonenumber: '', email: '' });
   const [successMessage, setSuccessMessage] = useState('');
@@ -20,7 +22,8 @@ const Profile = () => {
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    id:""
   });
   const [passwordSuccess, setPasswordSuccess] = useState('');
   const [passwordError, setPasswordError] = useState('');
