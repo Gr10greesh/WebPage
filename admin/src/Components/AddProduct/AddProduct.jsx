@@ -3,7 +3,7 @@ import './AddProduct.css';
 import upload_area from '../../assets/upload_area.svg';
 
 const AddProduct = () => {
-  const [image, setImage] = useState(null); // Initialize with null instead of false
+  const [image, setImage] = useState(null);
   const [productDetails, setProductDetails] = useState({
     name: "",
     image: "",
@@ -12,72 +12,67 @@ const AddProduct = () => {
     old_price: "",
   });
 
+  const [uploadedImageUrl, setUploadedImageUrl] = useState("");
   // Handle image file selection
   const imageHandler = (e) => {
-    setImage(e.target.files[0]); // Save the file object in state
+    setImage(e.target.files[0]);
+    setUploadedImageUrl(""); // reset uploaded preview when changing file
   };
 
-  // Handle product details changes
+  // Handle product detail changes
   const changeHandler = (e) => {
     setProductDetails({ ...productDetails, [e.target.name]: e.target.value });
   };
 
-  // Add Product function to handle both image upload and product details save
+  // Add Product
   const Add_Product = async () => {
     let responseData;
     let product = productDetails;
 
-    // Create form data to send the product data and the image
     let formData = new FormData();
-    formData.append('file', image); // Ensure 'file' matches the backend key
+    formData.append('file', image);
     formData.append('name', product.name);
     formData.append('category', product.category);
     formData.append('old_price', product.old_price);
     formData.append('new_price', product.new_price);
 
-    // Upload image to the server first
-    await fetch('http://localhost:4000/upload', {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-      },
-      body: formData, // Send the form data with image and product details
-    })
-      .then((resp) => resp.json())
-      .then((data) => {
-        responseData = data;
-      })
-      .catch((error) => {
-        console.error("Error uploading image:", error);
-        alert("Image upload failed");
-        return;
-      });
-
-    // If the image is uploaded successfully, proceed to add product
-    if (responseData?.success) {
-      // Assign the uploaded image URL to the product
-      product.image = responseData.image_url;
-      console.log(product);
-
-      // Now send product details to add it to the database
-      await fetch('http://localhost:4000/addproduct', {
+    try {
+      const uploadRes = await fetch('http://localhost:4000/upload', {
         method: 'POST',
         headers: {
           Accept: 'application/json',
-          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(product),
-      })
-        .then((resp) => resp.json())
-        .then((data) => {
-          data.success ? alert("Product Added") : alert("Failed");
-        })
-        .catch((error) => {
-          console.error("Error adding product:", error);
-          alert("Failed to add product");
+        body: formData,
+      });
+
+      responseData = await uploadRes.json();
+
+      if (responseData?.success) {
+        product.image = `http://localhost:4000${responseData.image_url}`;
+        setUploadedImageUrl(product.image); 
+
+        const addProductRes = await fetch('http://localhost:4000/addproduct', {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(product),
         });
-    } else {
-      alert("Image upload failed");
+
+        const addProductData = await addProductRes.json();
+
+        if (addProductData.success) {
+          alert(" Product Added Successfully!");
+        } else {
+          alert(" Failed to Add Product");
+        }
+      } else {
+        alert(" Image upload failed");
+      }
+    } catch (error) {
+      console.error("Upload/Add Error:", error);
+      alert("Something went wrong!");
     }
   };
 
@@ -94,6 +89,7 @@ const AddProduct = () => {
           required
         />
       </div>
+
       <div className="addproduct-price">
         <div className="addproduct-itemfield">
           <p>Price</p>
@@ -118,6 +114,7 @@ const AddProduct = () => {
           />
         </div>
       </div>
+
       <div className="addproduct-itemfield">
         <p>Product Category</p>
         <select
@@ -131,6 +128,7 @@ const AddProduct = () => {
           <option value="freefire">Freefire</option>
         </select>
       </div>
+
       <div className="addproduct-itemfield">
         <label htmlFor="file-input">
           <img
@@ -147,7 +145,20 @@ const AddProduct = () => {
           hidden
         />
       </div>
+
       <button onClick={Add_Product} className='addproduct-btn'>ADD</button>
+
+      {uploadedImageUrl && (
+        <div className="addproduct-itemfield">
+          <p> Uploaded Image Preview from Backend</p>
+          <img
+            src={uploadedImageUrl}
+            alt="Uploaded Product"
+            className='addproduct-thumnail-img'
+            style={{ border: "2px solid green", marginTop: "10px" }}
+          />
+        </div>
+      )}
     </div>
   );
 };
