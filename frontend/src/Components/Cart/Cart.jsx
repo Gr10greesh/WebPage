@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useShop } from "../../Context/ShopContext";
 import "../Cart/Cart.css";
+import { Link } from "react-router-dom";
 
 const Cart = () => {
   const {
@@ -156,7 +157,9 @@ const Cart = () => {
                   <span>Rs {totalAmount}</span>
                 </div>
                 <div className="cart-actions">
-                  <button className="checkout-btn">Proceed to Checkout</button>
+                  <Link to="/checkout" className="checkout-btn">
+                    Proceed to Checkout
+                  </Link>
                   <button 
                     className="clear-btn" 
                     onClick={() => {
