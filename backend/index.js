@@ -198,6 +198,9 @@ app.get('/api/user', authenticate, async (req, res) => {
 app.put('/api/user/profile', async (req, res) => {
   try {
     const { currentPassword, newPassword, confirmPassword } = req.body;
+    console.log("request",req.body);
+    console.log(req.user);
+  
     const user = await User.findById(req.user.id);  // Assuming you have middleware to set req.user
 
     // Check if current password matches
