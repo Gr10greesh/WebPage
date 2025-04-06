@@ -15,6 +15,7 @@ import DashboardHome from './Components/Dashboard/DashboardHome';
 import OrderHistory from './Components/Dashboard/OrderHistory';
 import Dashboard from './Components/Dashboard/Dashboard'
 import Profile from './Components/Dashboard/Profile';
+import Checkout from "./Components/Checkout/Checkout";
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
           <Route path="/cart" element={<Cart />} />
           <Route path="/login" element={<LoginSignup />} />
           <Route path="/products" element={<ProductList />} />
+          <Route path="/checkout" element={<Checkout />} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>}>
           <Route index element={<DashboardHome />} />
           <Route path="profile" element={<Profile />} />
