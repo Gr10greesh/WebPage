@@ -18,6 +18,7 @@ const port = process.env.PORT || 4000;
 // Middleware
 app.use(express.json());
 app.use(cors());
+app.use("/images", express.static(path.join(__dirname, "upload/images")));
 
 // Database Connection
 mongoose.connect(process.env.MONGODB_URI || "mongodb+srv://greeshdahal432:gr10greesh@cluster0.f0zi3.mongodb.net/gr10")
@@ -200,9 +201,10 @@ app.post('/upload', upload.single('file'), (req, res) => {
     return res.status(400).json({ success: false, message: 'No file uploaded' });
   }
 
-  const filePath = path.join('uploads', req.file.filename);
-  res.json({ success: true, image_url: filePath });
+  const imagePath = `/images/${req.file.filename}`;
+  res.json({ success: true, image_url: imagePath });
 });
+
 // Payment Routes
 app.post('/api/payment/verify', authenticate, async (req, res) => {
   try {
