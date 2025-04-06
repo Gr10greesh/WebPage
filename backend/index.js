@@ -194,6 +194,73 @@ app.get('/api/user', authenticate, async (req, res) => {
   }
 });
 
+// Create a POST route for file upload
+app.post('/upload', upload.single('file'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: 'No file uploaded' });
+  }
+
+  const filePath = path.join('uploads', req.file.filename);
+  res.json({ success: true, image_url: filePath });
+});
+// Payment Routes
+app.post('/api/payment/verify', authenticate, async (req, res) => {
+  try {
+    const { token, amount } = req.body;
+
+    // Always verify with Khalti in production
+    const verification = await axios.get('https://khalti.com/api/v2/payment/verify/', {
+      params: { token, amount },
+      headers: { 
+        Authorization: `Key ${process.env.KHALTI_SECRET_KEY}` 
+      }
+    });
+
+    // Proper success check
+    if (verification.data.state.name !== 'Completed') {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Payment not completed' 
+      });
+    }
+
+    res.json({
+      success: true,
+      payment: {
+        method: 'Khalti',
+        amount: verification.data.amount / 100,
+        transactionId: verification.data.idx,
+        verifiedAt: new Date()
+      }
+    });
+  } catch (err) {
+    console.error('Verification error:', err.response?.data || err.message);
+    res.status(400).json({
+      success: false,
+      message: err.response?.data?.detail || 'Payment verification failed'
+    });
+  }
+});
+
+
+
+// Order Routes
+app.post('/api/orders', authenticate, async (req, res) => {
+  try {
+    const order = await Order.create({
+      userId: req.userId,
+      ...req.body
+    });
+    
+    res.json({ success: true, order });
+  } catch (err) {
+    console.error('Order creation error:', err);
+    res.status(500).json({ success: false, message: 'Failed to create order' });
+  }
+});
+
+
+
 // Change Password Route
 app.put('/api/user/profile', async (req, res) => {
   try {
