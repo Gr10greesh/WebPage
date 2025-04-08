@@ -4,6 +4,9 @@ import { useState, useEffect, useContext, useMemo } from "react"
 import "./CSS/ShopCategory.css"
 import Item from "../Components/Item/Item"
 import { ShopContext } from "../Context/ShopContext"
+import FacebookMsg from "../Components/Chat/Facebook"
+
+
 
 const ShopCategory = (props) => {
   const { searchResults} = useContext(ShopContext)
@@ -248,6 +251,7 @@ const ShopCategory = (props) => {
                 )}
         </main>
       </div>
+      <FacebookMsg />
     </div>
   )
 }
