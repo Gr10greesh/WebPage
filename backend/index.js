@@ -264,13 +264,12 @@ app.post('/api/orders', authenticate, async (req, res) => {
 
 
 // Change Password Route
-app.put('/api/user/profile', async (req, res) => {
+app.put('/api/user/profile',authenticate, async (req, res) => {
   try {
     const { currentPassword, newPassword, confirmPassword } = req.body;
     console.log("request",req.body);
-    console.log(req.user);
-  
-    const user = await User.findById(req.user.id);  // Assuming you have middleware to set req.user
+    console.log(req.userId);
+    const user = await User.findById(req.userId);  // Assuming you have middleware to set req.user
 
     // Check if current password matches
     const isMatch = await bcrypt.compare(currentPassword, user.password);
