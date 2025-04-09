@@ -6,9 +6,6 @@ import Product from "./Pages/Product";
 import LoginSignup from "./Pages/LoginSignup";
 import Cart from "./Components/Cart/Cart";
 import Footer from "./Components/Footer/Footer";
-import giftcard_banner from "./Components/Assets/banner_giftcard.png";
-import mobilegames_banner from "./Components/Assets/banner_mobilegames.png";
-import freefire_banner from "./Components/Assets/banner_freefire.png";
 import ProductList from "./Pages/ProductList";
 import ProtectedRoute from "./Components/Auth/ProtectedRoute";
 import DashboardHome from './Components/Dashboard/DashboardHome';
@@ -24,9 +21,9 @@ function App() {
         <Navbar />
         <Routes>
           <Route path="/" element={<ShopCategory category="all" />} />
-          <Route path="/giftcard" element={<ShopCategory banner={giftcard_banner} category="giftcard" />} />
-          <Route path="/mobilegames" element={<ShopCategory banner={mobilegames_banner} category="mobilegames" />} />
-          <Route path="/freefire" element={<ShopCategory banner={freefire_banner} category="freefire" />} />
+          <Route path="/giftcard" element={<ShopCategory category="giftcard" />} />
+          <Route path="/mobilegames" element={<ShopCategory category="mobilegames" />} />
+          <Route path="/freefire" element={<ShopCategory category="freefire" />} />
           <Route path="/product/:productId" element={<Product />} />
           <Route path="/products/:productId" element={<Product />} />
           <Route path="/cart" element={<Cart />} />
