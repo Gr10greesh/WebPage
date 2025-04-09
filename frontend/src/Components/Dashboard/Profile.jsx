@@ -72,26 +72,52 @@ const Profile = () => {
     }));
   };
 
-  // Handle Profile Update
+  // // Handle Profile Update
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   try {
+  //     setIsSubmitting(true);
+  //     setAuthRedirectMessage('');
+  //     setSuccessMessage('');
+      
+  //     await updateUserProfile({
+  //       phonenumber: formData.phonenumber
+  //     });
+      
+
+  //     setSuccessMessage('Profile updated successfully!');
+  //     setTimeout(() => setSuccessMessage(''), 3000);
+  //   } catch (err) {
+  //     setAuthRedirectMessage(err.message || 'Failed to update profile');
+  //   } finally {
+  //     setIsSubmitting(false);
+  //   }
+  // };
+
+
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      setIsSubmitting(true);
-      setAuthRedirectMessage('');
-      setSuccessMessage('');
-      
-      await updateUserProfile({
-        phonenumber: formData.phonenumber
-      });
-      
-      setSuccessMessage('Profile updated successfully!');
-      setTimeout(() => setSuccessMessage(''), 3000);
-    } catch (err) {
-      setAuthRedirectMessage(err.message || 'Failed to update profile');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  e.preventDefault();
+  try {
+    setIsSubmitting(true);
+    setAuthRedirectMessage('');
+    setSuccessMessage('');
+
+    await updateUserProfile({
+      phonenumber: formData.phonenumber
+    });
+
+    // 🔁 Refresh the profile to reflect the new data
+    await fetchUserProfile(true);
+
+    setSuccessMessage('Profile updated successfully!');
+    setTimeout(() => setSuccessMessage(''), 3000);
+  } catch (err) {
+    setAuthRedirectMessage(err.message || 'Failed to update profile');
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
 
   // Handle Password Change
   const handlePasswordChange = async (e) => {
