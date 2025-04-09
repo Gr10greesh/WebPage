@@ -1,12 +1,7 @@
-
-
-
-
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
-import star_icon from '../Assets/star_icon.png';  // Ensure you have these images
-import star_dull_icon from '../Assets/star_dull_icon.png';
+
 
 const Product = () => {
   const { productId } = useParams();
@@ -28,11 +23,6 @@ const Product = () => {
           new_price: response.data.products.new_price,
           old_price: response.data.products.old_price,
           available: response.data.products.available,
-          rating: 4, // Mock rating: 4 out of 5
-          reviews: 128, // Mock reviews: 128 reviews
-          sizes: ["Small", "Medium", "Large"], // Mock sizes
-          tags: ["Gift Card", "Fortnite", "V-Bucks"], // Mock tags
-          description: "This is a mock description for the products.", // Mock description
         };
 
         setProduct(mappedProduct);
@@ -67,13 +57,6 @@ const Product = () => {
       <div className="productsdisplay-right">
         <h1>{products.name}</h1>
 
-        {/* Rating Section */}
-        <div className="productsdisplay-right-stars">
-          {Array.from({ length: 5 }, (_, index) => (
-            <img key={index} src={index < products.rating ? star_icon : star_dull_icon} alt="star" />
-          ))}
-          <p>({products.reviews} reviews)</p>
-        </div>
 
         <div className="productsdisplay-right-prices">
           <div className="productsdisplay-right-price-old">Rs {products.old_price}</div>
@@ -82,25 +65,11 @@ const Product = () => {
 
         <div className="productsdisplay-right-description">{products.description}</div>
 
-        <div className="productsdisplay-right-size">
-          <h1>Select Size</h1>
-          {products.sizes && products.sizes.length > 0 ? (
-            products.sizes.map((size, index) => (
-              <div key={index}>{size}</div>
-            ))
-          ) : (
-            <p>No sizes available</p>
-          )}
-        </div>
-
         <button onClick={handleAddToCart}>ADD TO CART</button>
 
-        {/* Category and Tags */}
+        {/* Category */}
         <p className="productsdisplay-right-category">
           <span>Category :</span> {products.category}
-        </p>
-        <p className="productsdisplay-right-category">
-          <span>Tags :</span> {products.tags ? products.tags.join(', ') : 'No tags available'}
         </p>
       </div>
     </div>
