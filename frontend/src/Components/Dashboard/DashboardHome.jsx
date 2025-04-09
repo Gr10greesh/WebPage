@@ -8,7 +8,6 @@ const DashboardHome = () => {
 
       <div className="stats-row">
         <div className="stat-card">
-          <img src="/images/order-icon.png" alt="Orders" />
           <h3>Total Order</h3>
           <p>2</p>
         </div>
@@ -21,10 +20,6 @@ const DashboardHome = () => {
         </div>
 
         <div className="info-grid">
-          <div className="info-row">
-            <span className="info-label">Name:</span>
-            <span className="info-value">Greesh Dahal</span>
-          </div>
           <div className="info-row">
             <span className="info-label">Email:</span>
             <span className="info-value">greeshdahal432@gmail.com</span>
