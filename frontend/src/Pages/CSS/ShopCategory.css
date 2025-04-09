@@ -12,14 +12,20 @@
   border-radius: 12px;
   margin: 30px auto;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  position: relative;
 }
 
 .shopcategory-banner {
   display: block;
   width: 100%;
   height: auto;
-  object-fit: cover;
-  transition: transform 0.3s ease;
+  opacity: 1;
+  transition: opacity 0.5s ease-in-out;
+}
+
+/* Fade effect when banner changes */
+.shopcategory-banner.fade {
+  opacity: 0;
 }
 
 .banner-container:hover .shopcategory-banner {
@@ -334,6 +340,33 @@
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
 }
 
+/* Carousel Dots */
+.carousel-dots {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  background-color: #bbb;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.dot.active {
+  background-color: #ff4d4f; /* Match the red color of your "PLAY" button */
+}
+
+.dot:hover {
+  background-color: #ff7875;
+}
+
 /* Responsive Styles */
 @media (max-width: 1280px) {
   .shopcategory-container {
@@ -347,9 +380,8 @@
     transition: transform 0.3s ease, opacity 0.3s ease;
   }
 
-  .shopcategory-sidebar:not(.visible) {
-    transform: translateX(-20px);
-    opacity: 0;
+  .shopcategory-sidebar.visible {
+    display: block;
   }
 
   .shopcategory-products {
@@ -381,6 +413,11 @@
   .shopcategory-products {
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   }
+
+  .banner-container {
+    max-width: 100%;
+  }
+
 }
 
 @media (max-width: 768px) {
@@ -390,6 +427,11 @@
 
   .banner-container {
     margin: 20px auto;
+  }
+
+  .dot {
+    width: 8px;
+    height: 8px;
   }
 
   .shopcategory-indexSort {
