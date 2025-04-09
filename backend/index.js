@@ -295,6 +295,31 @@ app.put('/api/user/profile',authenticate, async (req, res) => {
   }
 });
 
+
+app.put("/api/user/number",authenticate,async(req,res)=>{
+  try{
+    const { phonenumber } = req.body;
+    console.log("request",req.body);
+    console.log(req.userId);
+    const user = await User.findById(req.userId);
+    if(!user) {
+
+      res.status(400).json({ message: 'Failed to update Phone Number' });
+
+    }
+
+    user.phonenumber = phonenumber;
+    await user.save();
+
+    res.status(200).json({ message: 'Phone Number Updated Successfully' });
+
+  }
+  catch(error) {
+    res.status(500).json({ message: 'Failed to update Phone Number' });
+    console.log(error)
+
+  }
+})
 // KYC Routes
 // app.put('/api/user/kyc', authenticate, upload.single('document'), async (req, res) => {
 //   try {
