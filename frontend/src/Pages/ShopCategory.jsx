@@ -5,6 +5,10 @@ import "./CSS/ShopCategory.css"
 import Item from "../Components/Item/Item"
 import { ShopContext } from "../Context/ShopContext"
 import FacebookMsg from "../Components/Chat/Facebook"
+import giftcard_banner from "../../src/Components/Assets/banner_giftcard.png";
+import mobilegames_banner from "../../src/Components/Assets/banner_mobilegames.png";
+import freefire_banner from "../../src/Components/Assets/banner_freefire.png";
+
 
 
 
@@ -13,6 +17,8 @@ const ShopCategory = (props) => {
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [visibleProducts, setVisibleProducts] = useState(16);
+  const banners = [giftcard_banner, mobilegames_banner, freefire_banner];
+  const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
 
   // Filter states
   const [sortOption, setSortOption] = useState('featured');
@@ -54,6 +60,19 @@ const ShopCategory = (props) => {
         return products;
     }
   };
+
+  // useEffect to handle the carousel auto-slide
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentBannerIndex((prevIndex) =>
+        prevIndex === banners.length - 1 ? 0 : prevIndex + 1
+      );
+    }, 3000); // Change banner every 3 seconds
+
+     // Cleanup interval on component unmount
+  return () => clearInterval(interval);
+}, [banners.length]);
+
 
   // Get all unique categories for filter options
   const allCategories = useMemo(() => {
@@ -120,11 +139,23 @@ const ShopCategory = (props) => {
 
   return (
     <div className="shop-category">
-      {props.banner && (
-        <div className="banner-container">
-          <img className="shopcategory-banner" src={props.banner || "/placeholder.svg"} alt="Category Banner" />
+      <div className="banner-container">
+        <img
+          className="shopcategory-banner"
+          src={banners[currentBannerIndex]}
+          alt="Category Banner"
+        />
+        {/* Optional: Add dots for navigation */}
+        <div className="carousel-dots">
+          {banners.map((_, index) => (
+            <span
+              key={index}
+              className={`dot ${index === currentBannerIndex ? "active" : ""}`}
+              onClick={() => setCurrentBannerIndex(index)}
+            ></span>
+          ))}
         </div>
-      )}
+      </div>
 
       <div className="shopcategory-container">
         {/* Mobile Filter Toggle Button */}
