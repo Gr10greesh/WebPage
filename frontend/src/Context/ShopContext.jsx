@@ -105,7 +105,7 @@ const ShopContextProvider = ({ children }) => {
 
   const updateUserProfile = useCallback(async (profileData) => {
     try {
-      const data = await fetchData("/api/user/profile", {
+      const data = await fetchData("/api/user/number", {
         method: "PUT",
         data: profileData
       });
@@ -116,6 +116,7 @@ const ShopContextProvider = ({ children }) => {
       throw err;
     }
   }, [fetchData]);
+
 
   const changePassword = useCallback(async (currentPassword, newPassword, confirmPassword) => {
     return fetchData("/api/user/profile", {
