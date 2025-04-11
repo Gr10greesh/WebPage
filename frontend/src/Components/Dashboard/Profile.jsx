@@ -106,7 +106,7 @@ const Profile = () => {
       phonenumber: formData.phonenumber
     });
 
-    // 🔁 Refresh the profile to reflect the new data
+    //  Refresh the profile to reflect the new data
     await fetchUserProfile(true);
 
     setSuccessMessage('Profile updated successfully!');
