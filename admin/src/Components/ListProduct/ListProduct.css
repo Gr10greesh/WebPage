@@ -1,0 +1,383 @@
+/* CSS Variables (aligned with navbar/footer/sidebar) */
+:root {
+  --primary-color: #2c3e50; 
+  --accent-color: #e74c3c; 
+  --accent-hover: #c0392b; 
+  --background-color: #f8f9fb;
+  --text-color: #34495e; 
+  --success-color: #2ecc71; 
+  --error-color: #e74c3c;
+  --transition: all 0.3s ease;
+  --border-radius: 8px;
+}
+
+/* Main Container */
+.list-product {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 1200px;
+  margin: 40px auto;
+  padding: 30px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8f9fb 100%);
+  border-radius: var(--border-radius);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  min-height: calc(100vh - 200px);
+}
+
+/* Heading */
+.list-product h1 {
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  margin-bottom: 30px;
+  text-align: center;
+  letter-spacing: 0.5px;
+}
+
+/* Header Row */
+.listproduct-format-main {
+  display: grid;
+  grid-template-columns: 100px 3fr 1fr 1fr 1fr 80px;
+  gap: 15px;
+  width: 100%;
+  padding: 15px 20px;
+  background: var(--background-color);
+  color: var(--text-color);
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: var(--border-radius);
+  position: sticky;
+  top: 80px; /* Adjust based on navbar height */
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Product Row */
+.listproduct-format {
+  display: grid;
+  grid-template-columns: 100px 3fr 1fr 1fr 1fr 80px;
+  gap: 15px;
+  align-items: center;
+  padding: 15px 20px;
+  transition: var(--transition);
+}
+
+.listproduct-format:hover {
+  background: rgba(231, 76, 60, 0.05);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Product Image */
+.listproduct-product-icon {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 6px;
+  transition: var(--transition);
+}
+
+.listproduct-format:hover .listproduct-product-icon {
+  transform: scale(1.05);
+}
+
+/* Title */
+.listproduct-title {
+  font-size: 1rem;
+  color: var(--text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Prices and Category */
+.listproduct-format p:not(.listproduct-title) {
+  font-size: 1rem;
+  color: var(--text-color);
+  text-align: center;
+}
+
+/* Remove Icon */
+.listproduct-remove-icon {
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  margin: 0 auto;
+  transition: var(--transition);
+}
+
+.listproduct-remove-icon:hover {
+  transform: scale(1.2);
+  filter: brightness(0) saturate(100%) hue-rotate(0deg);
+}
+
+/* Product List Container */
+.listproduct-allproducts {
+  width: 100%;
+  border-radius: var(--border-radius);
+}
+
+/* Horizontal Rule */
+.listproduct-allproducts hr {
+  border: none;
+  border-top: 1px solid #dfe6e9;
+  margin: 0;
+}
+
+/* Confirmation Modal */
+.confirm-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.confirm-modal-content {
+  background: #ffffff;
+  padding: 30px;
+  border-radius: var(--border-radius);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+  animation: fadeIn 0.3s ease;
+}
+
+.confirm-modal-content p {
+  font-size: 1.1rem;
+  color: var(--text-color);
+  margin-bottom: 20px;
+}
+
+.confirm-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.confirm-btn {
+  padding: 10px 24px;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  text-transform: uppercase;
+}
+
+.confirm-yes {
+  background: var(--accent-color);
+  color: #fff;
+}
+
+.confirm-yes:hover {
+  background: var(--accent-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+}
+
+.confirm-no {
+  background: #7f8c8d;
+  color: #fff;
+}
+
+.confirm-no:hover {
+  background: #6c7778;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Modal Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .list-product {
+    padding: 20px;
+    margin: 30px auto;
+  }
+
+  .list-product h1 {
+    font-size: 1.8rem;
+  }
+
+  .listproduct-format-main,
+  .listproduct-format {
+    grid-template-columns: 80px 2fr 1fr 1fr 1fr 60px;
+    gap: 10px;
+    padding: 12px 15px;
+  }
+
+  .listproduct-product-icon {
+    width: 60px;
+    height: 60px;
+  }
+
+  .listproduct-format-main p,
+  .listproduct-format p {
+    font-size: 0.95rem;
+  }
+
+  .listproduct-remove-icon {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .list-product {
+    padding: 15px;
+    margin: 20px auto;
+  }
+
+  .list-product h1 {
+    font-size: 1.5rem;
+  }
+
+  .listproduct-format-main {
+    display: grid; /* Keep header visible */
+    grid-template-columns: 60px 1fr 60px; /* Image, Title, Remove */
+    gap: 8px;
+    padding: 10px;
+    font-size: 0.85rem;
+  }
+
+  .listproduct-format-main p:nth-child(1),
+  .listproduct-format-main p:nth-child(2),
+  .listproduct-format-main p:nth-child(6) {
+    display: block; /* Show Image, Title, Remove */
+  }
+
+  .listproduct-format-main p:nth-child(3),
+  .listproduct-format-main p:nth-child(4),
+  .listproduct-format-main p:nth-child(5) {
+    display: none; /* Hide Old Price, New Price, Category */
+  }
+
+  .listproduct-format {
+    display: grid;
+    grid-template-columns: 60px 1fr 60px;
+    grid-template-areas:
+      "image title remove"
+      "image details details";
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .listproduct-product-icon {
+    grid-area: image;
+    width: 50px;
+    height: 50px;
+  }
+
+  .listproduct-title {
+    grid-area: title;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  .listproduct-format p:not(.listproduct-title) {
+    grid-area: details;
+    font-size: 0.85rem;
+    text-align: left;
+    margin: 2px 0;
+  }
+
+  /* Show only new price on mobile for simplicity */
+  .listproduct-format p:nth-child(3),
+  .listproduct-format p:nth-child(5) {
+    display: none; /* Hide Old Price, Category */
+  }
+
+  .listproduct-format p:nth-child(4) {
+    display: block;
+  }
+
+  .listproduct-format p:nth-child(4)::before {
+    content: "Price: Rs ";
+    color: #7f8c8d;
+  }
+
+  .listproduct-remove-icon {
+    grid-area: remove;
+    width: 18px;
+    height: 18px;
+  }
+
+  .confirm-modal-content {
+    padding: 20px;
+    max-width: 300px;
+  }
+
+  .confirm-modal-content p {
+    font-size: 1rem;
+  }
+
+  .confirm-btn {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .list-product {
+    padding: 10px;
+    margin: 15px auto;
+  }
+
+  .list-product h1 {
+    font-size: 1.3rem;
+  }
+
+  .listproduct-format-main,
+  .listproduct-format {
+    grid-template-columns: 50px 1fr 50px;
+    padding: 8px;
+  }
+
+  .listproduct-product-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .listproduct-title {
+    font-size: 0.85rem;
+  }
+
+  .listproduct-format p:not(.listproduct-title) {
+    font-size: 0.8rem;
+  }
+
+  .listproduct-remove-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .confirm-modal-content {
+    padding: 15px;
+    max-width: 260px;
+  }
+
+  .confirm-btn {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+  }
+}
