@@ -1,8 +1,62 @@
-.admin{
-    display: flex;
+/* CSS Variables (aligned with other components) */
+:root {
+  --primary-color: #2c3e50; 
+  --accent-color: #e74c3c; 
+  --background-color: #f8f9fb; 
+  --text-color: #34495e;
+  --transition: all 0.3s ease;
+  --border-radius: 8px;
 }
-@media(max-width:800px){
-    .admin{
-        flex-direction: column;
-    }
+
+/* Main Admin Container */
+.admin {
+  display: flex;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #f8f9fb 0%, #ebedf0 100%);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  transition: var(--transition);
+}
+
+/* Content Wrapper (for AddProduct/ListProduct) */
+.admin > :nth-child(2) {
+  flex: 1;
+  padding: 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden; /* Prevent horizontal scroll */
+}
+
+/* Sidebar Integration */
+.admin .sidebar {
+  flex-shrink: 0; /* Prevent sidebar from shrinking */
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .admin > :nth-child(2) {
+    padding: 30px;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin {
+    flex-direction: column;
+  }
+
+  .admin > :nth-child(2) {
+    padding: 20px;
+  }
+
+  .admin .sidebar {
+    width: 100%; /* Full-width sidebar on mobile */
+    max-width: none; /* Override Sidebar.css max-width */
+  }
+}
+
+@media (max-width: 480px) {
+  .admin > :nth-child(2) {
+    padding: 15px;
+  }
 }
