@@ -1,14 +1,18 @@
 const dotenv = require('dotenv');
 const express = require("express");
+const session = require('express-session');
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const cors = require("cors");
 const mongoose = require("mongoose");
+const MongoStore = require('connect-mongo');
 const multer = require("multer");
 const path = require("path");
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const fs = require('fs');
+const passport = require('passport');
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
 
 // Initialize app and config
 dotenv.config();
@@ -17,8 +21,32 @@ const port = process.env.PORT || 4000;
 
 // Middleware
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:3000', 'http://localhost:5173'],
+  credentials: true
+}));
 app.use("/images", express.static(path.join(__dirname, "upload/images")));
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: { 
+    secure: false, // Set to true in production with HTTPS
+    httpOnly: true,
+    sameSite: 'lax', // Helps with OAuth flows
+    maxAge: 24 * 60 * 60 * 1000
+  },
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGODB_URI,
+    ttl: 24 * 60 * 60
+  })
+}));
+
+app.use((req, res, next) => {
+  console.log('Session data:', req.session); // Debug session
+  next();
+});
+
 
 // Database Connection
 mongoose.connect(process.env.MONGODB_URI || "mongodb+srv://greeshdahal432:gr10greesh@cluster0.f0zi3.mongodb.net/gr10")
@@ -27,19 +55,12 @@ mongoose.connect(process.env.MONGODB_URI || "mongodb+srv://greeshdahal432:gr10gr
 
 // Enhanced User Schema
 const userSchema = new mongoose.Schema({
-  phonenumber: { type: String, unique: true },
-  email: { type: String, unique: true },
+  phonenumber: { type: String, required: true, unique: true },
+  email: { type: String, required: true, unique: true },
   password: String,
   resetPasswordToken: String,
   resetPasswordExpires: Date,
   emailVerified: { type: Boolean, default: false },
-  referrals: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  // kyc: {
-  //   documentType: { type: String, default: '' },
-  //   documentNumber: { type: String, default: '' },
-  //   issuedDate: { type: Date, default: null },
-  //   verified: { type: Boolean, default: false }
-  // }
 }, { timestamps: true });
 
 // Product Schema
@@ -51,8 +72,31 @@ const productSchema = new mongoose.Schema({
   new_price: { type: Number, required: true },
   old_price: { type: Number, required: true },
   date: { type: Date, default: Date.now },
-  available: { type: Boolean, default: true }
+  available: { type: Boolean, default: true },
+  reviews: [{
+    name: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    comment: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    rating: {
+      type: Number,
+      required: true,
+      min: 1,
+      max: 5
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
+  }]
 });
+
 
 // Cart Schema
 const cartSchema = new mongoose.Schema({
@@ -92,20 +136,20 @@ const orderSchema = new mongoose.Schema({
   }],
   status: { 
     type: String,
-    enum: ['processing', 'shipped', 'delivered', 'cancelled'],
+    enum: ['processing', 'delivered', 'cancelled'],
     default: 'processing'
   },
   total: {
     type: Number,
     required: true
   },
-  shippingAddress: {
-    type: String,
-    required: true
-  },
   paymentMethod: {
     type: String,
     required: true
+  },
+  isArchived: {   
+    type: Boolean,
+    default: false
   },
   createdAt: {
     type: Date,
@@ -113,11 +157,29 @@ const orderSchema = new mongoose.Schema({
   }
 });
 
+// Subscriber Schema
+const subscriberSchema = new mongoose.Schema({
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
+    trim: true,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
 // Models
 const User = mongoose.model("User", userSchema);
 const Product = mongoose.model("Product", productSchema);
 const Cart = mongoose.model("Cart", cartSchema);
 const Order = mongoose.model("Order", orderSchema);
+const Subscriber = mongoose.model("Subscriber", subscriberSchema);
+
+
 
 // Authentication Middleware
 const authenticate = async (req, res, next) => {
@@ -164,7 +226,90 @@ const upload = multer({
   }
 });
 
-app.use("/images", express.static("upload/images"));
+//app.use("/images", express.static("upload/images"));
+
+// Configure Passport for Google OAuth
+passport.use(new GoogleStrategy({
+  clientID: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  callbackURL: 'http://localhost:4000/auth/google/callback'
+}, async (accessToken, refreshToken, profile, done) => {
+  try {
+    console.log('Google profile:', profile); // Debug log
+    
+    // Check if user exists by Google email
+    let user = await User.findOne({ email: profile.emails[0].value });
+    
+    if (user) {
+      console.log('Existing user found:', user); // Debug log
+      return done(null, user);
+    }
+
+    // Create new user with better placeholder data
+    user = new User({
+      email: profile.emails[0].value,
+      phonenumber: `google-${profile.id}`, // Better placeholder format
+      emailVerified: true,
+      password: null
+    });
+
+    await user.save();
+    console.log('New user created:', user); // Debug log
+    
+    return done(null, user);
+  } catch (err) {
+    console.error('Google auth error:', err);
+    return done(err, null);
+  }
+}));
+
+passport.use('google-verify-email', new GoogleStrategy({
+  clientID: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  callbackURL: 'http://localhost:4000/auth/google/verify-email/callback',
+  passReqToCallback: true
+}, async (req, accessToken, refreshToken, profile, done) => {
+  try {
+    // Just return the email for verification
+    return done(null, { 
+      email: profile.emails[0].value,
+      // Include any other needed profile info
+      name: profile.displayName 
+    });
+  } catch (err) {
+    return done(err, null);
+  }
+}));
+
+
+// Serialize and deserialize user for session
+passport.serializeUser((user, done) => {
+  if (user._id) {
+    // Regular user case (has MongoDB _id)
+    done(null, { id: user._id, type: 'user' });
+  } else {
+    // Email verification case (just has email)
+    done(null, { email: user.email, type: 'email' });
+  }
+});
+
+passport.deserializeUser(async (obj, done) => {
+  try {
+    if (obj.type === 'user') {
+      const user = await User.findById(obj.id);
+      done(null, user);
+    } else {
+      // For email verification, just pass through the email
+      done(null, { email: obj.email });
+    }
+  } catch (err) {
+    done(err, null);
+  }
+});
+
+// Initialize Passport
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Utility Functions
 const generateAuthToken = (userId) => {
@@ -176,19 +321,22 @@ const generateAuthToken = (userId) => {
 // User Profile Routes
 app.get('/api/user', authenticate, async (req, res) => {
   try {
-    res.set('Cache-Control', 'private, max-age=30');
-    
     const user = await User.findById(req.userId)
-      .select('-password -__v -resetPasswordToken -resetPasswordExpires')
+      .select('-__v -resetPasswordToken -resetPasswordExpires')
       .lean();
 
-    res.json({
+    // Explicitly include password: null if it's null
+    const responseData = {
       _id: user._id,
       email: user.email,
       phonenumber: user.phonenumber,
+      password: user.password || null, // Explicit null
+      emailVerified: user.emailVerified,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt
-    });
+    };
+
+    res.json(responseData);
   } catch (err) {
     console.error("User fetch error:", err);
     res.status(500).json({ error: 'Failed to fetch profile' });
@@ -205,24 +353,83 @@ app.post('/upload', upload.single('file'), (req, res) => {
   res.json({ success: true, image_url: imagePath });
 });
 
-// Payment Routes
-app.post('/api/payment/verify', authenticate, async (req, res) => {
+//const KHALTI_API_BASE = 'https://a.khalti.com/api/v2/epayment';
+const KHALTI_API_BASE = 'https://dev.khalti.com/api/v2/';
+
+// Initiate Payment
+app.post('/api/payment/initiate', authenticate, async (req, res) => {
   try {
-    const { token, amount } = req.body;
+    const { amount, purchase_order_id, purchase_order_name, return_url } = req.body;
 
-    // Always verify with Khalti in production
-    const verification = await axios.get('https://khalti.com/api/v2/payment/verify/', {
-      params: { token, amount },
-      headers: { 
-        Authorization: `Key ${process.env.KHALTI_SECRET_KEY}` 
+    // Validate the request body
+    if (!amount || !purchase_order_id || !purchase_order_name) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields'
+      });
+    }
+
+    const payload = {
+      return_url: return_url || 'http://localhost:3000/payment-callback',
+      website_url: 'http://localhost:3000',
+      amount: amount * 100, // Convert to paisa
+      purchase_order_id,
+      purchase_order_name,
+    };
+
+    const response = await axios.post(
+      `${KHALTI_API_BASE}/epayment/initiate/`,
+      payload,
+      {
+        headers: {
+          Authorization: `Key ${process.env.KHALTI_SECRET_KEY}`,
+          'Content-Type': 'application/json'
+        }
       }
-    });
+    );
 
-    // Proper success check
-    if (verification.data.state.name !== 'Completed') {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Payment not completed' 
+    res.json({
+      success: true,
+      data: response.data
+    });
+  } catch (err) {
+    console.error('Payment initiation error:', err.response?.data || err.message);
+    res.status(400).json({
+      success: false,
+      message: err.response?.data?.detail || 'Payment initiation failed'
+    });
+  }
+});
+
+
+
+// Payment Routes
+app.get('/api/payment/verify', authenticate, async (req, res) => {
+  try {
+    const { pidx } = req.query;
+
+    if (!pidx) {
+      return res.status(400).json({
+        success: false,
+        message: 'PIDX is required'
+      });
+    }
+
+    const response = await axios.post(
+      `${KHALTI_API_BASE}/epayment/lookup/`,
+      { pidx },
+      {
+        headers: {
+          Authorization: `Key ${process.env.KHALTI_SECRET_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    if (response.data.status !== 'Completed') {
+      return res.status(400).json({
+        success: false,
+        message: 'Payment not completed'
       });
     }
 
@@ -230,8 +437,8 @@ app.post('/api/payment/verify', authenticate, async (req, res) => {
       success: true,
       payment: {
         method: 'Khalti',
-        amount: verification.data.amount / 100,
-        transactionId: verification.data.idx,
+        amount: response.data.amount / 100,
+        transactionId: response.data.idx,
         verifiedAt: new Date()
       }
     });
@@ -243,7 +450,6 @@ app.post('/api/payment/verify', authenticate, async (req, res) => {
     });
   }
 });
-
 
 
 // Order Routes
@@ -261,37 +467,67 @@ app.post('/api/orders', authenticate, async (req, res) => {
   }
 });
 
-
-
-// Change Password Route
-app.put('/api/user/profile',authenticate, async (req, res) => {
+// Order Routes
+app.get('/api/user/orders', authenticate, async (req, res) => {
   try {
-    const { currentPassword, newPassword, confirmPassword } = req.body;
-    console.log("request",req.body);
-    console.log(req.userId);
-    const user = await User.findById(req.userId);  // Assuming you have middleware to set req.user
+    const orders = await Order.find({ userId: req.userId })
+      .sort({ createdAt: -1 })
+      .populate('items.productId', 'name image price'); // optional: load product details
+    res.json({ success: true, orders });
+  } catch (err) {
+    console.error("Error fetching user orders:", err);
+    res.status(500).json({ success: false, message: "Failed to fetch orders" });
+  }
+});
 
-    // Check if current password matches
-    const isMatch = await bcrypt.compare(currentPassword, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: 'Current password is incorrect' });
+
+// Update the password change route
+app.put('/api/user/profile', authenticate, async (req, res) => {
+  try {
+    const { currentPassword, newPassword, confirmPassword, isGoogleUser } = req.body;
+    const user = await User.findById(req.userId);
+
+    console.log('Password update request:', { 
+      isGoogleUser, 
+      hasPassword: user.password !== null,
+      currentPasswordLength: currentPassword?.length 
+    });
+
+    // For Google users or users without password
+    if (isGoogleUser || user.password === null) {
+      // Skip current password verification
+      console.log('Skipping current password verification for Google user');
+    } 
+    else {
+      // Regular users must provide current password
+      if (!currentPassword) {
+        return res.status(400).json({ message: 'Current password is required' });
+      }
+
+      const isMatch = await bcrypt.compare(currentPassword, user.password);
+      if (!isMatch) {
+        return res.status(400).json({ message: 'Current password is incorrect' });
+      }
     }
 
-    // Check if new password and confirm password match
+    // Validate new passwords
     if (newPassword !== confirmPassword) {
       return res.status(400).json({ message: 'New passwords do not match' });
     }
 
-    // Hash the new password
+    if (newPassword.length < 8) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters' });
+    }
+
+    // Update password
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(newPassword, salt);
-
-    // Save the updated user
     await user.save();
+
     res.status(200).json({ message: 'Password updated successfully' });
   } catch (err) {
-    console.error('Error updating password:', err);
-    res.status(500).json({ message: 'Failed to update password' });
+    console.error('Password update error:', err);
+    res.status(500).json({ message: 'Failed to update password', error: err.message });
   }
 });
 
@@ -320,83 +556,116 @@ app.put("/api/user/number",authenticate,async(req,res)=>{
 
   }
 })
-// KYC Routes
-// app.put('/api/user/kyc', authenticate, upload.single('document'), async (req, res) => {
-//   try {
-//     const { documentType, documentNumber, issuedDate } = req.body;
-    
-//     const kycData = {
-//       documentType,
-//       documentNumber,
-//       issuedDate: new Date(issuedDate),
-//       verified: false
-//     };
 
-//     if (req.file) {
-//       kycData.documentImage = `/images/${req.file.filename}`;
-//     }
-
-//     const user = await User.findByIdAndUpdate(
-//       req.userId,
-//       { kyc: kycData },
-//       { new: true }
-//     ).select('-password');
-
-//     res.json(user);
-//   } catch (err) {
-//     res.status(500).json({ error: 'KYC update failed' });
-//   }
-// });
-
-// Order Routes
-app.get('/api/user/orders', authenticate, async (req, res) => {
+// Admin updates order status
+app.put('/api/admin/orders/:orderId', async (req, res) => {
   try {
-    const orders = await Order.find({ userId: req.userId })
-      .sort({ createdAt: -1 })
-      .lean();
+    const { orderId } = req.params;
+    const { status } = req.body;
 
-    const formattedOrders = orders.map(order => ({
-      ...order,
-      createdAt: new Date(order.createdAt).toLocaleDateString(),
-      items: order.items.map(item => ({
-        ...item,
-        product: {
-          name: item.name,
-          image: item.productId?.image || '',
-          price: item.price
-        }
-      }))
-    }));
+    const updatedOrder = await Order.findByIdAndUpdate(
+      orderId,
+      { status },
+      { new: true }
+    );
 
-    res.json(formattedOrders);
+    if (!updatedOrder) {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
+
+    res.json({ success: true, order: updatedOrder });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch orders' });
+    console.error('Error updating order status:', err);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 
-// Referral Routes
-app.get('/api/user/referrals', authenticate, async (req, res) => {
+// Admin archives an order
+app.put('/api/admin/orders/:orderId/archive', async (req, res) => {
   try {
-    const user = await User.findById(req.userId)
-      .populate('referrals', 'email createdAt')
-      .select('referrals');
-    
-    res.json(user.referrals);
+    const { orderId } = req.params;
+    const updatedOrder = await Order.findByIdAndUpdate(
+      orderId,
+      { isArchived: true },
+      { new: true }
+    );
+    res.json({ success: true, order: updatedOrder });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch referrals' });
+    console.error('Error archiving order:', err);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
+
+
+
+
+// Google OAuth Routes
+app.get('/auth/google', passport.authenticate('google', {
+  scope: ['profile', 'email']
+}));
+
+app.get('/auth/google/verify-email', passport.authenticate('google-verify-email', {
+  scope: ['profile', 'email'],
+  session: true
+}));
+
+app.get('/auth/google/callback', passport.authenticate('google', { failureRedirect: '/login' }), (req, res) => {
+  // Successful authentication
+  const token = jwt.sign(
+    { user: { id: req.user._id } },
+    process.env.JWT_SECRET || "secret_ecom",
+    { expiresIn: "1h" }
+  );
+  // Redirect to frontend with token and userId
+  res.redirect(`http://localhost:3000/login?token=${token}&userId=${req.user._id}`);
+});
+
+app.get('/auth/google/verify-email/callback', 
+  passport.authenticate('google-verify-email', { 
+    failureRedirect: 'http://localhost:3000/login?error=verification_failed'
+  }),
+  (req, res) => {
+    // Store verified email in session
+    req.session.verifiedEmail = req.user.email;
+    req.session.save(err => {
+      if (err) {
+        console.error('Session save error:', err);
+        return res.redirect('http://localhost:3000/login?error=session_error');
+      }
+      
+      // Redirect back to frontend with success flag
+      res.redirect('http://localhost:3000/signup?verified=true');
+    });
+  }
+);
 
 // Auth Routes
 app.post("/signup", async (req, res) => {
   try {
     const { phonenumber, email, password } = req.body;
-    
-    // Basic validation
-    if (!email || !password || !phonenumber) {
+
+    // Validate input
+    if (!phonenumber || !email || !password) {
       return res.status(400).json({ 
         success: false, 
-        message: "Email, phone number and password are required" 
+        message: "All fields are required" 
+      });
+    }
+
+          // Validate phone number format
+    if (!/^\d{10}$/.test(phonenumber)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Phone number must be exactly 10 digits" 
+      });
+    }
+
+    // Check session for verified email
+    if (!req.session.verifiedEmail || req.session.verifiedEmail !== email) {
+      return res.status(403).json({
+        success: false,
+        message: "Email verification required",
+        needsVerification: true
       });
     }
 
@@ -406,7 +675,7 @@ app.post("/signup", async (req, res) => {
     });
 
     if (existingUser) {
-      return res.status(400).json({
+      return res.status(409).json({
         success: false,
         message: existingUser.email === email 
           ? "Email already exists" 
@@ -414,38 +683,53 @@ app.post("/signup", async (req, res) => {
       });
     }
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    // Create new user (only with required fields)
-    const newUser = await User.create({
+    // Create and save new user
+    const newUser = new User({
       phonenumber,
       email,
-      password: hashedPassword
+      password: await bcrypt.hash(password, 10),
+      emailVerified: true
     });
 
-    // Generate token
-    const token = jwt.sign(
-      { user: { id: newUser._id } }, 
-      process.env.JWT_SECRET || "secret_ecom", 
-      { expiresIn: "1h" }
-    );
+    await newUser.save();
 
-    res.json({
+    // Clear verification flag
+    delete req.session.verifiedEmail;
+    await req.session.save();
+
+    // Generate token
+    const token = generateAuthToken(newUser._id);
+
+    return res.json({
       success: true,
       token,
       userId: newUser._id
     });
 
   } catch (err) {
-    console.error("Signup Error:", err);
-    res.status(500).json({ 
+    console.error("Signup error:", err);
+    return res.status(500).json({ 
       success: false, 
-      message: "Server error during signup" 
+      message: "Registration failed",
+      error: err.message 
     });
   }
 });
+
+app.post('/check-email-verified', (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ needsVerification: true });
+  }
+
+  if (req.session.verifiedEmail === email) {
+    return res.json({ needsVerification: false });
+  }
+
+  return res.json({ needsVerification: true });
+});
+
+
 
 app.post("/login", async (req, res) => {
   try {
@@ -490,7 +774,7 @@ app.post('/forgot-password', async (req, res) => {
     const resetLink = `http://localhost:3000/login?token=${resetToken}`;
 
     const mailOptions = {
-      from: `"Nodemailer" <${process.env.EMAIL_USER}>`,
+      from: `"Gr10" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: "Password Reset Request",
       html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -573,6 +857,19 @@ app.post("/addproduct", async (req, res) => {
   }
 });
 
+// Admin fetches all non-archived orders
+app.get('/api/admin/orders', async (req, res) => {
+  try {
+    const orders = await Order.find({ isArchived: false })
+      .populate('userId', 'email phonenumber')
+      .sort({ createdAt: -1 });
+    res.json({ success: true, orders });
+  } catch (err) {
+    console.error('Error fetching orders:', err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 app.get("/allproducts", async (req, res) => {
   try {
     const products = await Product.find({});
@@ -601,6 +898,39 @@ app.get("/product/:id", async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
+
+
+
+app.post("/product/:id/review", async (req, res) => {
+  try {
+    const productId = parseInt(req.params.id);
+    if (isNaN(productId)) {
+      return res.status(400).json({ success: false, message: "Invalid product ID" });
+    }
+
+    const product = await Product.findOne({ id: productId });
+    if (!product) {
+      return res.status(404).json({ success: false, message: "Product not found" });
+    }
+
+    const { name, comment, rating } = req.body;
+    const newReview = {
+      name: name.trim(),
+      comment: comment.trim(),
+      rating: parseInt(rating),
+      createdAt: new Date()
+    };
+
+    product.reviews.push(newReview);
+    await product.save();
+
+    res.status(201).json({ success: true, review: newReview });
+  } catch (error) {
+    console.error("Error submitting review:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
 
 app.post("/removeproduct", async (req, res) => {
   try {
@@ -649,10 +979,16 @@ app.get("/api/products/search", async (req, res) => {
 
 app.post("/update-cart", authenticate, async (req, res) => {
   try {
-    const items = Object.entries(req.body.cartItems).map(([productId, quantity]) => ({
-      productId,
-      quantity
-    }));
+    const items = Object.entries(req.body.cartItems).map(([productId, quantity]) => {
+      // Validate that productId is a valid ObjectId
+      if (!mongoose.Types.ObjectId.isValid(productId)) {
+        throw new Error(`Invalid productId: ${productId}`);
+      }
+      return {
+        productId,
+        quantity: parseInt(quantity)
+      };
+    });
 
     const cart = await Cart.findOneAndUpdate(
       { userId: req.userId },
@@ -663,7 +999,7 @@ app.post("/update-cart", authenticate, async (req, res) => {
     res.json({ success: true, cart });
   } catch (err) {
     console.error("Update Cart Error:", err);
-    res.status(500).json({ success: false, message: "Server error" });
+    res.status(500).json({ success: false, message: err.message || "Server error" });
   }
 });
 
@@ -686,6 +1022,52 @@ app.post("/clear-cart", authenticate, async (req, res) => {
     res.json({ success: true, message: "Cart cleared" });
   } catch (err) {
     console.error("Clear Cart Error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+// Subscription Route
+app.post("/api/subscribe", async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    // Validate email
+    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+      return res.status(400).json({ success: false, message: "Invalid email" });
+    }
+
+    // Check if email is already subscribed
+    const existingSubscriber = await Subscriber.findOne({ email });
+    if (existingSubscriber) {
+      return res.status(400).json({ success: false, message: "Email already subscribed" });
+    }
+
+    // Create new subscriber
+    const subscriber = new Subscriber({ email });
+    await subscriber.save();
+
+    // Send confirmation email (using existing transporter)
+    const mailOptions = {
+      from: `"Top-Up Newsletter" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: "Welcome to Top-Up Newsletter",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #333;">Thank You for Subscribing!</h2>
+          <p>Welcome to the Top-Up community! You'll now receive updates on our latest offers and products.</p>
+          <p style="color: #666; font-size: 0.9em;">
+            If you did not subscribe, please ignore this email.
+          </p>
+        </div>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log(`Subscription confirmation sent to ${email}`);
+
+    res.status(201).json({ success: true, message: "Subscribed successfully" });
+  } catch (err) {
+    console.error("Subscription Error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
