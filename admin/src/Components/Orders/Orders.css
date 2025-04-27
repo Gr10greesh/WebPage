@@ -1,0 +1,97 @@
+.orders {
+    padding: 20px;
+    width: 100%;
+    overflow-x: auto;
+  }
+  
+  .orders-table {
+    width: 100%;
+    margin-top: 20px;
+    overflow-x: auto;
+  }
+  
+  .orders-header, .orders-row {
+    display: grid;
+    grid-template-columns: 1.5fr 2fr 1fr 1fr 1fr 1fr 1.5fr 1.5fr;
+    align-items: center;
+    gap: 20px;
+    text-align: center;
+    padding: 15px 20px;
+    min-width: 1000px; 
+  }
+  
+  .orders-header {
+    font-weight: bold;
+    background-color: #f0f2f5;
+    border-radius: 10px;
+    margin-bottom: 10px;
+  }
+  
+  .orders-row {
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease;
+  }
+  
+  .orders-row:hover {
+    transform: scale(1.005);
+    background-color: #fafafa;
+  }
+  
+  .status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    text-transform: capitalize;
+    display: inline-block;
+    font-weight: bold;
+  }
+  
+  .badge-processing {
+    background-color: #fff3cd;
+    color: #856404;
+  }
+  
+  .badge-shipped {
+    background-color: #cce5ff;
+    color: #004085;
+  }
+  
+  .badge-delivered {
+    background-color: #d4edda;
+    color: #155724;
+  }
+  
+  .badge-cancelled {
+    background-color: #f8d7da;
+    color: #721c24;
+  }
+  
+  select {
+    padding: 6px 10px;
+    border-radius: 8px;
+    outline: none;
+    border: 1px solid #ccc;
+    background-color: #f9f9f9;
+    font-size: 0.9rem;
+  }
+  
+  .order-item-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  
+  /* Mobile Responsive */
+  @media (max-width: 768px) {
+    .orders-header, .orders-row {
+      grid-template-columns: 1fr 1fr;
+      font-size: 12px;
+      padding: 10px;
+      min-width: 600px;
+    }
+  }
+  
