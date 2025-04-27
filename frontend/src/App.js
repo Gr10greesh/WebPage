@@ -13,6 +13,8 @@ import OrderHistory from './Components/Dashboard/OrderHistory';
 import Dashboard from './Components/Dashboard/Dashboard'
 import Profile from './Components/Dashboard/Profile';
 import Checkout from "./Components/Checkout/Checkout";
+import PaymentCallback from "./Components/PaymentCallback/PaymentCallback";
+import OrderSuccess from "./Components/OrderSuccess/OrderSuccess";
 
 function App() {
   return (
@@ -30,6 +32,8 @@ function App() {
           <Route path="/login" element={<LoginSignup />} />
           <Route path="/products" element={<ProductList />} />
           <Route path="/checkout" element={<Checkout />} />
+          <Route path="/payment-callback" element={<PaymentCallback />} />
+          <Route path="/order-success" element={<OrderSuccess />} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>}>
           <Route index element={<DashboardHome />} />
           <Route path="profile" element={<Profile />} />

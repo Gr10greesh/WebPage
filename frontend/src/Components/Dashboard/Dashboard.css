@@ -16,15 +16,16 @@ body {
 /* Dashboard Container */
 .dashboard-container {
   display: flex;
-  gap: 1.5rem;
-  padding: 1.5rem 2rem;
+  gap: 2.5rem; /* bigger gap */
+  padding: 2rem 3rem;
   min-height: 100vh;
   background: linear-gradient(145deg, #f7fafc 0%, #e2e8f0 100%);
 }
 
+
 /* Sidebar Styles */
 .dashboard-sidebar {
-  width: 240px;
+  width: 200px; /* smaller sidebar */
   padding: 1.5rem;
   background: #ffffff;
   border-radius: 12px;
@@ -74,7 +75,7 @@ body {
 /* Dashboard Content */
 .dashboard-content {
   flex: 1;
-  padding: 2rem;
+  padding: 2.5rem 3rem; /* more breathing room */
   background: #ffffff;
   border-radius: 12px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
@@ -397,15 +398,21 @@ body {
 /* Medium-Large Screens (1024px to 1279px) */
 @media (min-width: 1024px) and (max-width: 1279px) {
   .dashboard-container {
-    padding: 1.5rem 2rem;
+    flex-direction: column;
+    padding: 1.5rem;
+    gap: 2rem;
   }
 
   .dashboard-sidebar {
-    width: 220px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    padding: 1rem;
   }
 
   .dashboard-content {
-    padding: 1.75rem;
+    padding: 2rem;
   }
 
   .stat-card {

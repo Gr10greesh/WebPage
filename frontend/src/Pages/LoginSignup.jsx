@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { ShopContext } from '../Context/ShopContext';
 import './CSS/LoginSignup.css';
 import axios from 'axios';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { GoogleLogin } from '@react-oauth/google';
 
 const LoginSignup = () => {
   const [state, setState] = useState("Login");
@@ -17,29 +18,89 @@ const LoginSignup = () => {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
   const [tokenFromUrl, setTokenFromUrl] = useState(null);
+  const [phoneError, setPhoneError] = useState('');
   const [loading, setLoading] = useState(false);
   const { setUserId, fetchUserProfile, setAuthRedirectMessage } = useContext(ShopContext);
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || '/';
+  axios.defaults.withCredentials = true;
+
+  const completeSignup = useCallback(async (signupData) => {
+    console.log('Completing signup with data:', signupData);
+    try {
+      const payload = {
+        phonenumber: signupData.phonenumber,
+        email: signupData.email,
+        password: signupData.password
+      };
+      const response = await axios.post('http://localhost:4000/signup', payload);
+      console.log('Signup response:', response.data);
+
+      if (response.data.success) {
+        localStorage.setItem('auth-token', response.data.token);
+        setUserId(response.data.userId);
+        await fetchUserProfile();
+        navigate(from, { replace: true });
+      } else {
+        alert(response.data.message || "Signup failed");
+      }
+    } catch (error) {
+      console.error("Error completing signup:", error.response?.data || error.message);
+      alert("An error occurred. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchUserProfile, navigate, from, setUserId]);
 
   useEffect(() => {
     const queryParams = new URLSearchParams(window.location.search);
     const token = queryParams.get('token');
-
-    if (token) {
+    const userId = queryParams.get('userId');
+    const emailVerified = queryParams.get('emailVerified');
+    const email = queryParams.get('email');
+  
+    if (token && userId) {
+      localStorage.setItem('auth-token', token);
+      setUserId(userId);
+      fetchUserProfile();
+      navigate(from, { replace: true });
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (token) {
       setTokenFromUrl(token);
       setFormData(prev => ({ ...prev, resetToken: token }));
       setShowForgotPassword(true);
       setResetEmailSent(true);
       window.history.replaceState({}, '', window.location.pathname);
+    } else if (emailVerified || email) {
+      const pendingSignup = JSON.parse(sessionStorage.getItem('pendingSignup'));
+      
+      if (pendingSignup) {
+        completeSignup(pendingSignup);
+        sessionStorage.removeItem('pendingSignup');
+      }
+      
+      window.history.replaceState({}, '', window.location.pathname);
     }
-  }, []);
+  }, [fetchUserProfile, navigate, from, setUserId, completeSignup]);
 
   const changeHandler = (e) => {
     const { name, value } = e.target;
-    if (name === 'phonenumber' && value.length > 10) return;
-    setFormData({ ...formData, [name]: value });
+    
+    if (name === 'phonenumber') {
+      const numbersOnly = value.replace(/\D/g, '');
+      if (numbersOnly.length > 10) return;
+      
+      setFormData({ ...formData, [name]: numbersOnly });
+      
+      if (numbersOnly.length < 10) {
+        setPhoneError('Phone number must be 10 digits');
+      } else {
+        setPhoneError('');
+      }
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
   };
 
   const login = async (e) => {
@@ -60,8 +121,8 @@ const LoginSignup = () => {
       if (response.data.success) {
         localStorage.setItem('auth-token', response.data.token);
         setUserId(response.data.userId);
-        await fetchUserProfile(); // NEW: Fetch user profile data
-        navigate(from, { replace: true }); // NEW: Better navigation
+        await fetchUserProfile();
+        navigate(from, { replace: true });
       } else {
         alert(response.data.errors || "Invalid credentials");
       }
@@ -76,33 +137,41 @@ const LoginSignup = () => {
   const signup = async (e) => {
     e.preventDefault();
     setLoading(true);
+  
     if (!formData.email || !formData.phonenumber || !formData.password || !formData.confirmPassword) {
       alert("Please fill all required fields");
       setLoading(false);
       return;
     }
 
+    if (formData.phonenumber.length !== 10) {
+      setPhoneError('Phone number must be exactly 10 digits');
+      setLoading(false);
+      return;
+    }
+  
     if (formData.password !== formData.confirmPassword) {
       alert("Passwords do not match");
       setLoading(false);
       return;
     }
-
+  
     try {
-      const response = await axios.post('http://localhost:4000/signup', formData);
-
-      if (response.data.success) {
-        localStorage.setItem('auth-token', response.data.token);
-        setUserId(response.data.userId);
-        await fetchUserProfile(); // NEW: Fetch user profile data
-        navigate(from, { replace: true }); // NEW: Better navigation
-      } else {
-        alert(response.data.errors);
+      const verifyResponse = await axios.post(
+        'http://localhost:4000/check-email-verified',
+        { email: formData.email }
+      );
+  
+      if (verifyResponse.data.needsVerification) {
+        sessionStorage.setItem('pendingSignup', JSON.stringify(formData));
+        window.location.href = `http://localhost:4000/auth/google/verify-email?email=${encodeURIComponent(formData.email)}`;
+        return;
       }
+  
+      await completeSignup(formData);
     } catch (error) {
       console.error("Error during signup:", error);
-      alert("An error occurred. Please try again later.");
-    } finally {
+      alert(error.response?.data?.message || "An error occurred. Please try again later.");
       setLoading(false);
     }
   };
@@ -151,7 +220,6 @@ const LoginSignup = () => {
 
       if (response.data.success) {
         alert("Password reset successfully!");
-        // Reset all relevant states
         resetForgotPasswordFlow();
         setState("Login");
       } else {
@@ -176,7 +244,18 @@ const LoginSignup = () => {
     });
   };
 
-  const { authRedirectMessage} = useContext(ShopContext);
+  const handleGoogleSuccess = () => {
+    window.location.href = state === "Login" 
+      ? 'http://localhost:4000/auth/google' 
+      : 'http://localhost:4000/auth/google/verify-email';
+  };
+
+  const handleGoogleFailure = (error) => {
+    console.error("Google Sign-In Error:", error);
+    alert("Failed to sign in with Google. Please try again.");
+  };
+
+  const { authRedirectMessage } = useContext(ShopContext);
 
   useEffect(() => {
     if (authRedirectMessage) {
@@ -266,9 +345,13 @@ const LoginSignup = () => {
                     value={formData.phonenumber}
                     onChange={changeHandler}
                     type="tel"
-                    placeholder='Phone number'
-                    maxLength="10"
+                    placeholder='Phone number (10 digits)'
+                    maxLength={10}
+                    pattern="[0-9]{10}"
+                    inputMode="numeric"
+                    required
                   />
+                  {phoneError && <div className="error-message">{phoneError}</div>}
                   <input
                     name='email'
                     value={formData.email}
@@ -320,7 +403,26 @@ const LoginSignup = () => {
                   </p>
                 </>
               )}
+
+              {/* Google Sign-In Section - Appears in both forms */}
+              <div className="google-auth-section">
+                <div className="auth-divider">
+                  <span className="divider-line"></span>
+                  <span className="divider-text">or</span>
+                  <span className="divider-line"></span>
+                </div>
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={handleGoogleFailure}
+                  text={state === "Login" ? "signin_with" : "signup_with"}
+                  shape="rectangular"
+                  theme="outline"
+                  size="large"
+                  width="100%"
+                />
+              </div>
             </div>
+            
             <button
               onClick={(e) => state === "Login" ? login(e) : signup(e)}
               className="auth-button"
@@ -328,23 +430,18 @@ const LoginSignup = () => {
             >
               {loading ? 'Processing...' : 'Continue'}
             </button>
+            
             {state === "Sign Up" ? (
               <p className="loginsignup-login">
                 Already have an account?{' '}
-                <span
-                  onClick={() => setState("Login")}
-                  style={{ cursor: 'pointer', color: '#0066cc' }}
-                >
+                <span onClick={() => setState("Login")}>
                   Login here
                 </span>
               </p>
             ) : (
               <p className="loginsignup-login">
                 Don't have an account?{' '}
-                <span
-                  onClick={() => setState("Sign Up")}
-                  style={{ cursor: 'pointer', color: '#0066cc' }}
-                >
+                <span onClick={() => setState("Sign Up")}>
                   Sign up
                 </span>
               </p>

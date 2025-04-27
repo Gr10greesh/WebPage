@@ -1,20 +1,29 @@
 import { useState, useEffect, useContext } from 'react';
 import { ShopContext } from '../../Context/ShopContext';
-import { Link} from "react-router-dom";
+import { Link } from "react-router-dom";
 import './OrderHistory.css';
 
 const OrderHistory = () => {
-  const { fetchData, userId } = useContext(ShopContext);
+  const { userId } = useContext(ShopContext);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [expandedOrder, setExpandedOrder] = useState(null);
 
   useEffect(() => {
     const loadOrders = async () => {
       try {
-        const data = await fetchData(`/api/users/${userId}/orders`);
-        setOrders(data);
+        const token = localStorage.getItem('auth-token');
+        const res = await fetch('http://localhost:4000/api/user/orders', {
+          headers: {
+            'auth-token': token
+          }
+        });
+        const data = await res.json();
+        if (data.success) {
+          setOrders(data.orders);
+        } else {
+          throw new Error(data.message || 'Failed to fetch orders');
+        }
       } catch (err) {
         setError(err.message || 'Failed to load orders');
       } finally {
@@ -23,11 +32,7 @@ const OrderHistory = () => {
     };
 
     if (userId) loadOrders();
-  }, [userId, fetchData]);
-
-  const toggleOrder = (orderId) => {
-    setExpandedOrder(expandedOrder === orderId ? null : orderId);
-  };
+  }, [userId]);
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -37,14 +42,32 @@ const OrderHistory = () => {
     });
   };
 
+  const getStatusBadge = (status) => {
+    let colorClass = '';
+    switch (status.toLowerCase()) {
+      case 'processing':
+        colorClass = 'badge-processing';
+        break;
+      case 'shipped':
+        colorClass = 'badge-shipped';
+        break;
+      case 'delivered':
+        colorClass = 'badge-delivered';
+        break;
+      case 'cancelled':
+        colorClass = 'badge-cancelled';
+        break;
+      default:
+        colorClass = '';
+    }
+    return <span className={`status-badge ${colorClass}`}>{status}</span>;
+  };
+
   return (
     <div className="order-history-container">
-      <div className="order-sidebar">
-      </div>
-
       <div className="order-content">
         <h2>Your Orders</h2>
-        
+
         {loading ? (
           <div className="loading-spinner">Loading orders...</div>
         ) : error ? (
@@ -52,67 +75,46 @@ const OrderHistory = () => {
         ) : orders.length === 0 ? (
           <div className="no-orders">
             <p>You haven't placed any orders yet</p>
-            <Link to="/shop" className="shop-button">Start Shopping</Link>
+            <Link to="/" className="shop-button">Start Shopping</Link>
           </div>
         ) : (
           <div className="orders-list">
             {orders.map(order => (
-              <div key={order._id} className={`order-card ${expandedOrder === order._id ? 'expanded' : ''}`}>
-                <div className="order-header" onClick={() => toggleOrder(order._id)}>
+              <div key={order._id} className="order-card">
+                <div className="order-header">
                   <div className="order-meta">
-                    <span className="order-id">Order #{order.orderNumber}</span>
+                    <span className="order-id">Order #{order._id.slice(-6)}</span>
                     <span className="order-date">{formatDate(order.createdAt)}</span>
                   </div>
                   <div className="order-status">
-                    <span className={`status-badge ${order.status.toLowerCase()}`}>
-                      {order.status}
-                    </span>
+                    {getStatusBadge(order.status)}
                   </div>
-                  <div className="order-total">${order.totalAmount.toFixed(2)}</div>
+                  <div className="order-total">Rs {order.total?.toFixed(2) || 0}</div>
                 </div>
 
-                {expandedOrder === order._id && (
-                  <div className="order-details">
-                    <div className="order-items">
-                      <h4>Items</h4>
-                      {order.items.map(item => (
-                        <div key={item._id} className="order-item">
-                          <img src={item.product.image} alt={item.product.name} />
-                          <div className="item-info">
-                            <h5>{item.product.name}</h5>
-                            <p>Quantity: {item.quantity}</p>
-                            <p>Price: ${item.price.toFixed(2)}</p>
-                          </div>
+                <div className="order-details">
+                  <div className="order-items">
+                    <h4>Items</h4>
+                    {order.items.map(item => (
+                      <div key={item._id} className="order-item">
+                        <img src={item.productId?.image} alt={item.productId?.name} />
+                        <div className="item-info">
+                          <h5>{item.productId?.name}</h5>
+                          <p>Quantity: {item.quantity}</p>
+                          <p>Price: Rs {item.price?.toFixed(2) || 0}</p>
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    ))}
+                  </div>
 
-                    <div className="order-summary">
-                      <h4>Order Summary</h4>
-                      <div className="summary-row">
-                        <span>Subtotal:</span>
-                        <span>${order.subtotal.toFixed(2)}</span>
-                      </div>
-                      <div className="summary-row">
-                        <span>Shipping:</span>
-                        <span>${order.shippingCost.toFixed(2)}</span>
-                      </div>
-                      <div className="summary-row">
-                        <span>Tax:</span>
-                        <span>${order.tax.toFixed(2)}</span>
-                      </div>
-                      <div className="summary-row total">
-                        <span>Total:</span>
-                        <span>${order.totalAmount.toFixed(2)}</span>
-                      </div>
-                    </div>
-
-                    <div className="order-actions">
-                      <button className="track-button">Track Package</button>
-                      <button className="return-button">Request Return</button>
+                  <div className="order-summary">
+                    <h4>Order Summary</h4>
+                    <div className="summary-row total">
+                      <span>Total:</span>
+                      <span>Rs {order.total?.toFixed(2) || 0}</span>
                     </div>
                   </div>
-                )}
+                </div>
               </div>
             ))}
           </div>

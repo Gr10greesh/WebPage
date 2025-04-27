@@ -118,13 +118,28 @@ const ShopContextProvider = ({ children }) => {
   }, [fetchData]);
 
 
-  const changePassword = useCallback(async (currentPassword, newPassword, confirmPassword) => {
-    return fetchData("/api/user/profile", {
-      method: "PUT",
-      data: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
-      headers: { "Content-Type": "application/json" }
-    });
+  const changePassword = useCallback(async (currentPassword, newPassword, confirmPassword, isGoogleUser = false) => {
+    const payload = isGoogleUser 
+      ? { newPassword, confirmPassword, isGoogleUser: true }
+      : { currentPassword, newPassword, confirmPassword, isGoogleUser: false };
+  
+    try {
+      const response = await fetchData("/api/user/profile", {
+        method: "PUT",
+        data: JSON.stringify(payload),
+        headers: { "Content-Type": "application/json" }
+      });
+  
+      return response.data; 
+    } catch (error) {
+      console.error('Password change error:', error);
+      const errorMessage = error?.response?.data?.message || error.message || 'Failed to update password';
+      throw new Error(errorMessage);
+    }
   }, [fetchData]);
+  
+  
+  
 
   const verifyUserToken = useCallback(async () => {
     return fetchData('/api/user/verify-token'); // Just checks if token is valid
