@@ -3,6 +3,7 @@ import './Sidebar.css';
 import { NavLink } from 'react-router-dom'; // Switched to NavLink for active state
 import add_product_icon from '../../assets/Product_Cart.svg';
 import list_product_icon from '../../assets/Product_list_icon.svg';
+import orders_icon from '../../assets/orders_icon.svg';
 
 const Sidebar = () => {
   const sidebarItems = [
@@ -17,6 +18,12 @@ const Sidebar = () => {
       icon: list_product_icon,
       text: 'Product List',
       alt: 'Product List Icon',
+    },
+    {
+      path: '/orders',
+      icon: orders_icon,
+      text: 'Orders',
+      alt: 'Orders Icon',
     },
   ];
 
