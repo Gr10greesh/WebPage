@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import './Footer.css';
 import instagram_icon from '../Assets/instagram_icon.png';
-import pintester_icon from '../Assets/pintester_icon.png';
 import whatsapp_icon from '../Assets/whatsapp_icon.png';
 
 const Footer = () => {
@@ -10,21 +9,19 @@ const Footer = () => {
 
   const handleSubscribe = async (e) => {
     e.preventDefault();
-    setMessage(''); // Clear previous messages
+    setMessage('');
 
     try {
       const response = await fetch('http://localhost:4000/api/subscribe', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
 
       const data = await response.json();
       if (data.success) {
         setMessage('Subscribed successfully!');
-        setEmail(''); // Clear input
+        setEmail('');
       } else {
         setMessage(data.message || 'Subscription failed');
       }
@@ -47,27 +44,37 @@ const Footer = () => {
           />
           <button type="submit">Subscribe</button>
         </form>
-        {message && <p className={message.includes('success') ? 'success' : 'error'}>{message}</p>}
+        {message && (
+          <p className={message.includes('success') ? 'success' : 'error'}>
+            {message}
+          </p>
+        )}
       </div>
-      <ul className="footer-links">
-        <li>Offices</li>
-        <li>About</li>
-        <li>Contact</li>
-      </ul>
+
       <div className="footer-social-icon">
         <div className="footer-icons-container">
-          <img src={instagram_icon} alt="Instagram" />
+          <a
+            href="https://www.instagram.com/greesh_dahal" 
+            target="_blank" 
+            rel="noopener noreferrer"
+          >
+            <img src={instagram_icon} alt="Instagram" />
+          </a>
         </div>
         <div className="footer-icons-container">
-          <img src={pintester_icon} alt="Pinterest" />
-        </div>
-        <div className="footer-icons-container">
-          <img src={whatsapp_icon} alt="WhatsApp" />
+          <a
+            href="https://wa.me/9860461600" 
+            target="_blank" 
+            rel="noopener noreferrer"
+          >
+            <img src={whatsapp_icon} alt="WhatsApp" />
+          </a>
         </div>
       </div>
+
       <div className="footer-copyright">
         <hr />
-        <p>Copyright @ 2024 - All Right Reserved</p>
+        <p>Copyright © 2024 - All Rights Reserved</p>
       </div>
     </div>
   );
