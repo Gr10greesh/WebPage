@@ -41,6 +41,10 @@ const Cart = () => {
     }
   }, [isOpen, fetchCartData]);
 
+  useEffect(() => {
+    fetchCartData();     
+  }, [fetchCartData]);
+
   // Toggle cart visibility
   const toggleCart = useCallback(() => {
     setIsOpen(prev => !prev);
