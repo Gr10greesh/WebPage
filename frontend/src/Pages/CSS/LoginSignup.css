@@ -1,133 +1,122 @@
 /* Base Reset */
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-  
-  body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #e0e7ff, #f3f4f6); /* Soft gradient */
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-  
-  /* Container Styling */
-  .loginsignup {
-    width: 100%;
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 50px 20px;
-  }
-  
-  /* Form Card */
-  .loginsignup-container {
-    background: white;
-    padding: 40px;
-    width: 100%;
-    max-width: 500px;
-    border-radius: 14px;
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
-    transition: all 0.3s ease;
-  }
-  
-  /* Heading */
-  .loginsignup-container h1 {
-    text-align: center;
-    margin-bottom: 30px;
-    color: #1f2937; /* Dark gray */
-    font-size: 2rem;
-  }
-  
-  /* Input Fields */
-  .loginsignup-fields {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-  
-  .loginsignup-fields input {
-    padding: 16px;
-    border: 1px solid #d1d5db; /* Light border */
-    border-radius: 8px;
-    font-size: 1rem;
-    width: 100%;
-    transition: border-color 0.3s;
-  }
-  
-  .loginsignup-fields input:focus {
-    border-color: #6366f1; /* Indigo */
-    outline: none;
-  }
-  
-  /* Button */
-  .loginsignup-container button,
-  .auth-button {
-    width: 100%;
-    padding: 16px;
-    background: #6366f1; /* Indigo */
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 1.1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.3s ease;
-  }
-  
-  .loginsignup-container button:hover,
-  .auth-button:hover {
-    background: #4f46e5; /* Indigo dark */
-  }
-  
-  /* Footer Links */
-  .loginsignup-login,
-  .forgot-password,
-  .back-to-login {
-    margin-top: 20px;
-    font-size: 0.95rem;
-    text-align: center;
-    color: #6b7280; /* Gray */
-  }
-  
-  .loginsignup-login span,
-  .forgot-password,
-  .back-to-login {
-    color: #4f46e5;
-    font-weight: 600;
-    cursor: pointer;
-  }
-  
-  .forgot-password:hover,
-  .back-to-login:hover,
-  .loginsignup-login span:hover {
-    text-decoration: underline;
-  }
-  
-  /* Agreement Section */
-  .loginsignup-agree {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-top: 20px;
-    font-size: 0.9rem;
-    color: #6b7280;
-  }
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #e0e7ff, #f3f4f6);
+  min-height: 100vh;
+}
+
+/* Main Container */
+.loginsignup {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 40px 20px;
+}
+
+/* Form Card */
+.loginsignup-container {
+  background: white;
+  padding: 50px 40px;
+  width: 100%;
+  max-width: 520px;
+  border-radius: 16px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  transition: all 0.3s ease;
+}
+
+/* Heading */
+.loginsignup-container h1 {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #1f2937;
+  text-align: center;
+}
+
+/* Input Fields */
+.loginsignup-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.loginsignup-fields input {
+  padding: 15px 18px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
+  background: #f9fafb;
+  transition: 0.3s;
+}
+
+.loginsignup-fields input:focus {
+  border-color: #6366f1;
+  background: #fff;
+  outline: none;
+}
+
+/* Auth Button */
+.auth-button {
+  padding: 16px;
+  background: #6366f1;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.auth-button:hover {
+  background: #4f46e5;
+}
+
+.auth-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+/* Forgot password & Login/Signup Links */
+.loginsignup-login,
+.forgot-password,
+.back-to-login {
+  text-align: center;
+  font-size: 0.95rem;
+  color: #6b7280;
+}
+
+.loginsignup-login span,
+.forgot-password {
+  color: #4f46e5;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.loginsignup-login span:hover,
+.forgot-password:hover {
+  text-decoration: underline;
+}
 
 /* Google Auth Section */
 .google-auth-section {
-  width: 100%;
-  margin: 15px 0;
+  margin-top: 20px;
 }
 
 .auth-divider {
   display: flex;
   align-items: center;
-  margin: 15px 0;
+  gap: 10px;
+  margin: 20px 0;
 }
 
 .divider-line {
@@ -137,80 +126,45 @@
 }
 
 .divider-text {
-  padding: 0 10px;
-  color: #777;
   font-size: 0.9rem;
+  color: #777;
 }
 
-/* Error Message Styling */
+/* Error Messages */
 .error-message {
   color: #ff3333;
-  font-size: 0.8rem;
-  margin-top: 4px;
+  font-size: 0.85rem;
   text-align: left;
+  margin-top: -10px;
 }
 
-/* Button Styling */
-.auth-button {
-  margin-top: 10px;
-  width: 100%;
-  padding: 12px;
-  border: none;
-  border-radius: 4px;
-  background-color: #0066cc;
-  color: white;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.auth-button:hover {
-  background-color: #0052a3;
-}
-
-.auth-button:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
-}
-
-
-  
-  /* Responsive Tweaks */
-  @media (max-width: 1280px) {
-    .loginsignup-container {
-      padding: 30px;
-    }
+/* Responsive Design */
+@media (max-width: 768px) {
+  .loginsignup-container {
+    padding: 30px 20px;
+    gap: 20px;
   }
-  
-  @media (max-width: 1024px) {
-    .loginsignup-container {
-      max-width: 90%;
-      padding: 25px;
-    }
+
+  .loginsignup-container h1 {
+    font-size: 1.8rem;
   }
-  
-  @media (max-width: 768px) {
-    .loginsignup-container {
-      padding: 20px;
-    }
-  
-    .loginsignup-container h1 {
-      font-size: 1.5rem;
-    }
-  
-    .loginsignup-fields input {
-      padding: 14px;
-      font-size: 0.95rem;
-    }
-  
-    .loginsignup-container button {
-      padding: 14px;
-      font-size: 1rem;
-    }
-  
-    .loginsignup-agree {
-      flex-direction: column;
-      align-items: flex-start;
-    }
+
+  .loginsignup-fields input {
+    padding: 14px;
   }
-  
+
+  .auth-button {
+    padding: 14px;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .loginsignup-container {
+    padding: 25px 16px;
+  }
+
+  .loginsignup-container h1 {
+    font-size: 1.6rem;
+  }
+}
