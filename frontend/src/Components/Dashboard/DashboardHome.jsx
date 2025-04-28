@@ -36,7 +36,7 @@ const DashboardHome = () => {
 
   return (
     <div className="dashboard-home">
-      <h2>Hello, {userProfile?.name || 'User'} 👋</h2>
+      <h2>Welcome to Your Dashboard!👋</h2>
 
       <div className="stats-row">
         <div className="stat-card">
