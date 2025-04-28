@@ -151,6 +151,10 @@ const orderSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  productCode: {     
+    type: String,
+    default: ''
+  },
   createdAt: {
     type: Date,
     default: Date.now
@@ -466,6 +470,66 @@ app.post('/api/orders', authenticate, async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to create order' });
   }
 });
+
+// Admin sends product code and email
+app.post('/api/admin/orders/:orderId/sendcode', async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { code } = req.body;
+
+    const order = await Order.findById(orderId).populate('userId');
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+
+    // Save code to order
+    order.productCode = code;
+    await order.save();
+
+    // Send email (simple way)
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS 
+      }
+    });
+
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: order.userId.email,
+      subject: '🎁 Your Product Code - Thank You for Shopping with Us!',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; background: #f9f9f9; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <div style="text-align: center;">
+            <h2 style="color: #333;">Thank You for Your Purchase!</h2>
+          </div>
+          <p style="font-size: 16px; color: #555;">Hi there,</p>
+          <p style="font-size: 16px; color: #555;">
+            We are excited to deliver your product code! Here are your details:
+          </p>
+    
+          <div style="margin: 20px 0; padding: 15px; background: #fff; border-radius: 6px; border: 1px solid #ddd;">
+            <h3 style="color: #e63946;">🎯 Your Product Code:</h3>
+            <p style="font-size: 20px; font-weight: bold; color: #2a9d8f;">${code}</p>
+          </div>
+    
+          <p style="font-size: 15px; color: #555;">Please keep this code safe. If you face any issues, feel free to contact our support team.</p>
+    
+          <p style="margin-top: 20px; font-size: 12px; color: #aaa; text-align: center;">
+            &copy; ${new Date().getFullYear()} Gr10. All rights reserved.
+          </p>
+        </div>
+      `
+    });
+    
+
+    res.json({ success: true, message: 'Product code sent successfully!' });
+
+  } catch (error) {
+    console.error('Error sending code:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 
 // Order Routes
 app.get('/api/user/orders', authenticate, async (req, res) => {
