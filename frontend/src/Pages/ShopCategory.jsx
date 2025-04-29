@@ -4,7 +4,6 @@ import { useState, useEffect, useContext, useMemo } from "react"
 import "./CSS/ShopCategory.css"
 import Item from "../Components/Item/Item"
 import { ShopContext } from "../Context/ShopContext"
-import FacebookMsg from "../Components/Chat/Facebook"
 import giftcard_banner from "../../src/Components/Assets/banner_giftcard.png";
 import mobilegames_banner from "../../src/Components/Assets/banner_mobilegames.png";
 import freefire_banner from "../../src/Components/Assets/banner_freefire.png";
@@ -282,7 +281,6 @@ const ShopCategory = (props) => {
                 )}
         </main>
       </div>
-      <FacebookMsg />
     </div>
   )
 }
