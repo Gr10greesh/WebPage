@@ -23,6 +23,7 @@
   top: 0;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   overflow-y: auto;
+  border-left: 4px solid #5a67d8;
 }
 
 /* Sidebar Link */

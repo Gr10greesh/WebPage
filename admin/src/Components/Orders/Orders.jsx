@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import './Orders.css';
-
+import { toast } from 'react-toastify';
 const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [codeInputs, setCodeInputs] = useState({});
@@ -43,7 +43,7 @@ const Orders = () => {
       });
       const data = await res.json();
       if (data.success) {
-        alert('Order archived successfully!');
+        toast.success('Order archived successfully!');
         fetchOrders();
       }
     } catch (error) {
@@ -54,7 +54,7 @@ const Orders = () => {
   const sendProductCode = async (orderId) => {
     const code = codeInputs[orderId];
     if (!code) {
-      alert("Please enter a product code before sending!");
+      toast.error("Please enter a product code before sending!");
       return;
     }
 
@@ -68,10 +68,10 @@ const Orders = () => {
       });
       const data = await res.json();
       if (data.success) {
-        alert('Product code sent successfully!');
+        toast.success('Product code sent successfully!');
         fetchOrders();
       } else {
-        alert('Failed to send code!');
+        toast.error('Failed to send code!');
       }
     } catch (error) {
       console.error('Error sending product code:', error);

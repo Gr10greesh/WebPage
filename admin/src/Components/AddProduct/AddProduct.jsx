@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './AddProduct.css';
 import upload_area from '../../assets/upload_area.svg';
+import { toast } from 'react-toastify';
 
 const AddProduct = () => {
   const [image, setImage] = useState(null);
@@ -28,29 +29,37 @@ const AddProduct = () => {
   const Add_Product = async () => {
     let responseData;
     let product = productDetails;
-
+  
+    // Validate prices before uploading
+    const oldPrice = Number(product.old_price);
+    const newPrice = Number(product.new_price);
+  
+    if (isNaN(oldPrice) || isNaN(newPrice) || oldPrice <= 0 || newPrice <= 0) {
+      toast.error("Prices must be positive numbers greater than 0!");
+      return; // if invalid
+    }
+  
+    // Prepare form data
     let formData = new FormData();
     formData.append('file', image);
     formData.append('name', product.name);
     formData.append('category', product.category);
     formData.append('old_price', product.old_price);
     formData.append('new_price', product.new_price);
-
+  
     try {
       const uploadRes = await fetch('http://localhost:4000/upload', {
         method: 'POST',
-        headers: {
-          Accept: 'application/json',
-        },
+        headers: { Accept: 'application/json' },
         body: formData,
       });
-
+  
       responseData = await uploadRes.json();
-
+  
       if (responseData?.success) {
         product.image = `http://localhost:4000${responseData.image_url}`;
-        setUploadedImageUrl(product.image); 
-
+        setUploadedImageUrl(product.image);
+  
         const addProductRes = await fetch('http://localhost:4000/addproduct', {
           method: 'POST',
           headers: {
@@ -59,20 +68,20 @@ const AddProduct = () => {
           },
           body: JSON.stringify(product),
         });
-
+  
         const addProductData = await addProductRes.json();
-
+  
         if (addProductData.success) {
-          alert(" Product Added Successfully!");
+          toast.success("Product Added Successfully!");
         } else {
-          alert(" Failed to Add Product");
+          toast.error("Failed to Add Product");
         }
       } else {
-        alert(" Image upload failed");
+        toast.error("Image upload failed");
       }
     } catch (error) {
       console.error("Upload/Add Error:", error);
-      alert("Something went wrong!");
+      toast.error("Something went wrong!");
     }
   };
 
@@ -96,9 +105,10 @@ const AddProduct = () => {
           <input
             value={productDetails.old_price}
             onChange={changeHandler}
-            type="text"
+            type="number"
             name='old_price'
             placeholder='Type here'
+            min="1"
             required
           />
         </div>
@@ -107,9 +117,10 @@ const AddProduct = () => {
           <input
             value={productDetails.new_price}
             onChange={changeHandler}
-            type="text"
+            type="number"
             name='new_price'
             placeholder='Type here'
+            min="1"
             required
           />
         </div>
