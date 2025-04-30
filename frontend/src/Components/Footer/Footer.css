@@ -18,7 +18,8 @@
 
 /* Footer Container */
 .footer {
-  background: linear-gradient(180deg, var(--background-color) 0%, #dfe6e9 100%);
+  background: var(--secondary-color);
+  color: var(--text-color);
   padding: 60px 20px 40px;
   text-align: center;
   font-family: 'Inter', sans-serif;
@@ -128,11 +129,102 @@
   max-width: 700px;
   margin: 30px auto;
   border: 1px solid #dfe6e9;
+  border-color: var(--border-color);
 }
 
 .footer p {
   font-size: 0.9rem;
   color: #7f8c8d;
+}
+
+.dark-mode .footer-subscribe {
+  background-color: #333;
+  color: #f5f5f5;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.dark-mode .footer-subscribe h3 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.dark-mode .footer-subscribe input {
+  background-color: #444;
+  color: #f5f5f5;
+  border: 1px solid #555;
+  padding: 0.8rem 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  width: 100%;
+  transition: background-color 0.3s ease;
+}
+
+.dark-mode .footer-subscribe input:focus {
+  outline: none;
+  background-color: #555;
+  border-color: #888;
+}
+
+.dark-mode .footer-subscribe button {
+  background-color: #a80808;
+  color: #f5f5f5;
+  border: 1px solid #444;
+  padding: 0.8rem 1.2rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.dark-mode .footer-subscribe button:hover {
+  background-color: #333;
+}
+
+.dark-mode .footer-subscribe p.success {
+  color: #4caf50;
+}
+
+.dark-mode .footer-subscribe p.error {
+  color: #f44336;
+}
+
+.dark-mode .footer-social-icon {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  padding: 1rem 0;
+}
+
+.dark-mode .footer-icons-container a {
+  display: inline-block;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.dark-mode .footer-icons-container a:hover {
+  background-color: #444;
+  transform: scale(1.1);
+}
+
+.dark-mode .footer-icons-container img {
+  width: 30px;
+  height: 30px;
+  transition: filter 0.3s ease;
+}
+
+.dark-mode .footer-icons-container a:hover img {
+  filter: brightness(1.2); /* Slightly brighten the icon on hover */
+}
+
+/* Ensure the images have default visibility in dark mode */
+.dark-mode .footer-icons-container img[src*="instagram_icon"] {
+  filter: none; /* No filter on Instagram logo */
+}
+
+.dark-mode .footer-icons-container img[src*="whatsapp_icon"] {
+  filter: none; /* No filter on WhatsApp logo */
 }
 
 /* Responsive */

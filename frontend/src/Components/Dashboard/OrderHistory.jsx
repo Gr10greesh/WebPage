@@ -48,9 +48,6 @@ const OrderHistory = () => {
       case 'processing':
         colorClass = 'badge-processing';
         break;
-      case 'shipped':
-        colorClass = 'badge-shipped';
-        break;
       case 'delivered':
         colorClass = 'badge-delivered';
         break;

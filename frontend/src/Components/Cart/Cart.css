@@ -228,6 +228,77 @@
   animation: spin 1s linear infinite;
 }
 
+.dark-mode .cart-sidebar {
+  background: #1e1e1e;
+  box-shadow: -5px 0 15px rgba(0, 0, 0, 0.3);
+}
+
+.dark-mode .cart-header {
+  border-bottom-color: #333;
+}
+
+.dark-mode .cart-header h2 {
+  color: #f5f5f5;
+}
+
+.dark-mode .close-btn {
+  color: #aaa;
+}
+
+.dark-mode .close-btn:hover {
+  color: #f5f5f5;
+}
+
+.dark-mode .cart-item {
+  border-bottom-color: #333;
+}
+
+.dark-mode .item-details h3 {
+  color: #f5f5f5;
+}
+
+.dark-mode .quantity-controls button {
+  background: #2d2d2d;
+  border-color: #444;
+  color: #f5f5f5;
+}
+
+.dark-mode .quantity-controls button:hover {
+  background: #3d3d3d;
+}
+
+.dark-mode .remove-btn {
+  color: #777;
+}
+
+.dark-mode .remove-btn:hover {
+  color: var(--primary-color);
+}
+
+.dark-mode .cart-footer {
+  background: #1e1e1e;
+  border-top-color: #333;
+}
+
+.dark-mode .cart-total {
+  color: #f5f5f5;
+}
+
+.dark-mode .clear-btn {
+  background: #2d2d2d;
+  border-color: #444;
+  color: #f5f5f5;
+}
+
+.dark-mode .clear-btn:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.dark-mode .empty-cart {
+  color: #aaa;
+}
+
 @keyframes spin {
   to { transform: rotate(360deg); }
 }

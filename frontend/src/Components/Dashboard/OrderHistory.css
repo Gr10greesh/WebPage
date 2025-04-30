@@ -237,6 +237,91 @@
   transform: scale(1.05);
 }
 
+.dark-mode .order-history-container {
+  background: #1a1a1a;
+}
+
+.dark-mode .order-sidebar {
+  background: #2a2a2a;
+  box-shadow: 0 4px 20px rgba(255, 255, 255, 0.05);
+}
+
+.dark-mode .order-content {
+  background: #2a2a2a;
+  box-shadow: 0 6px 20px rgba(255, 255, 255, 0.05);
+}
+
+.dark-mode .order-content h2,
+.dark-mode .order-id,
+.dark-mode .order-total,
+.dark-mode .order-items h4,
+.dark-mode .order-summary h4,
+.dark-mode .item-info h5,
+.dark-mode .summary-row.total {
+  color: #f5f5f5;
+}
+
+.dark-mode .order-card {
+  background: #1f1f1f;
+  border-color: #333;
+}
+
+.dark-mode .order-header {
+  background: #242424;
+  border-bottom: 1px solid #333;
+}
+
+.dark-mode .order-date,
+.dark-mode .item-info p,
+.dark-mode .summary-row {
+  color: #c0c0c0;
+}
+
+.dark-mode .order-details {
+  background: #1f1f1f;
+  border-top: 1px solid #333;
+}
+
+.dark-mode .order-item img {
+  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.05);
+}
+
+.dark-mode .return-button {
+  background: #2a2a2a;
+  border: 1px solid #444;
+  color: #e0e0e0;
+}
+
+.dark-mode .return-button:hover {
+  background: #333;
+}
+
+.dark-mode .user-menu-button,
+.dark-mode .track-button {
+  color: #fff;
+}
+
+.dark-mode .status-badge {
+  color: #fff;
+  font-weight: 500;
+  border-radius: 12px;
+}
+
+.dark-mode .badge-processing {
+  background-color: #d6b100; 
+  color: #000;
+}
+
+.dark-mode .badge-delivered {
+  background-color: #26a69a; 
+  color: #fff;
+}
+
+.dark-mode .badge-cancelled {
+  background-color: #ef5350;
+  color: #fff;
+}
+
 /* Responsive Styles */
 
 /* Large Screens (1280px and above) */

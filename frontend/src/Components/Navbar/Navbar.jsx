@@ -7,7 +7,7 @@ import Cart from "../Cart/Cart"
 import { Link, useLocation } from "react-router-dom"
 import nav_dropdown from "../Assets/nav_dropdown.png"
 import { ShopContext } from "../../Context/ShopContext"
-import { FiUser, FiShoppingBag, FiLogOut, FiLayout } from "react-icons/fi"
+import { FiUser, FiShoppingBag, FiLogOut, FiLayout, FiMoon, FiSun } from "react-icons/fi"
 
 const Navbar = () => {
   const [menu, setMenu] = useState("shop")
@@ -19,6 +19,7 @@ const Navbar = () => {
   const dropdownRef = useRef()
   const userMenuRef = useRef()
   const location = useLocation()
+  const { darkMode, toggleDarkMode } = useContext(ShopContext);
 
   const { clearCart, setSearchResults, userId } = useContext(ShopContext)
 
@@ -197,6 +198,14 @@ const Navbar = () => {
     {/* {menu === "freefire" && <hr />} */}
   </li>
 </ul>
+
+<button 
+          className="dark-mode-toggle"
+          onClick={toggleDarkMode}
+          aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+        >
+          {darkMode ? <FiSun /> : <FiMoon />}
+</button>
 
 
       <div className="nav-login-cart">

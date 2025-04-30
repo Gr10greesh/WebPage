@@ -1,10 +1,18 @@
+:root {
+    --card-bg: #ffffff;
+    --border-color: #e0e0e0;
+    --price-new-color: #1a1a1a;
+    --price-old-color: #999999;
+  }
+
 .item {
     width: 240px;
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     transition: all 0.3s ease;
-    background: white;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
     padding: 12px;
     box-sizing: border-box;
 }
@@ -19,7 +27,7 @@
 
 .item p {
     margin: 8px 0;
-    color: #333;
+    color: var(--text-color);
     font-size: 15px;
     line-height: 1.3;
 }
@@ -36,6 +44,13 @@
     font-size: 18px;
     font-weight: 700;
 }
+.item-prices .item-price-new {
+    color: var(--price-new-color);
+  }
+
+  .item-prices .item-price-old {
+    color: var(--price-old-color);
+  }
 
 .item-price-old {
     color: #999;
@@ -48,6 +63,29 @@
     transform: translateY(-5px);
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
+
+.dark-mode {
+    --card-bg: #1e1e1e;
+    --border-color: #333333;
+    --price-new-color: #90ee90; /* light green */
+    --price-old-color: #bbbbbb;
+  }
+
+  .dark-mode .item img {
+    filter: brightness(0.85);
+    border: 1px solid #444;
+    box-shadow: 0 2px 4px rgba(255, 255, 255, 0.05);
+  }
+
+  .dark-mode {
+    --card-bg: #1e1e1e;       /* dark background */
+    --border-color: #444;
+    --price-new-color: #f0f0f0;
+    --price-old-color: #888;
+  }
+  body.dark-mode .item {
+    background: #1e1e1e;
+  }
 
 /* Responsive adjustments */
 @media (max-width: 1440px) {

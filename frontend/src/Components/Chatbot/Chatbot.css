@@ -1,0 +1,78 @@
+\/* Light mode defaults for chatbot */
+.react-simple-chatbot {
+  font-family: Arial, sans-serif;
+}
+
+.rsc-container {
+  z-index: 9999;
+}
+
+.rsc-header {
+  background-color: #6366f1 !important;
+  color: white !important;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.rsc-content {
+  background-color: #f5f8fb !important;
+}
+
+.rsc-ts-bubble {
+  background-color: #6366f1 !important;
+  color: white !important;
+}
+
+.rsc-os-option-element {
+  background-color: #fff !important;
+  color: #6366f1 !important;
+  border: 1px solid #ddd;
+}
+
+.rsc-os-option-element:hover {
+  background-color: #eee !important;
+}
+
+.rsc-ts-bubble-user {
+  background-color: #fff !important;
+  color: #4a4a4a !important;
+}
+
+/* DARK MODE SUPPORT */
+.dark-mode .rsc-header {
+  background-color: #2a2a2a !important;
+  color: #f5f5f5 !important;
+}
+
+.dark-mode .rsc-content {
+  background-color: #121212 !important;
+}
+
+.dark-mode .rsc-ts-bubble {
+  background-color: #4f46e5 !important; /* deeper indigo */
+  color: #ffffff !important;
+}
+
+.dark-mode .rsc-ts-bubble-user {
+  background-color: #333 !important;
+  color: #f0f0f0 !important;
+}
+
+.dark-mode .rsc-os-option-element {
+  background-color: #2a2a2a !important;
+  color: #e0e0e0 !important;
+  border: 1px solid #444;
+}
+
+.dark-mode .rsc-os-option-element:hover {
+  background-color: #3a3a3a !important;
+}
+
+/* Optional smooth transition */
+.rsc-header,
+.rsc-content,
+.rsc-ts-bubble,
+.rsc-ts-bubble-user,
+.rsc-os-option-element {
+  transition: background-color 0.3s, color 0.3s;
+}
