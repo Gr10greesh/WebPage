@@ -18,6 +18,8 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 dotenv.config();
 const app = express();
 const port = process.env.PORT || 4000;
+const ADMIN_EMAIL = 'admin@example.com';
+const ADMIN_PASSWORD = 'admin123';
 
 // Middleware
 app.use(express.json());
@@ -344,6 +346,17 @@ app.get('/api/user', authenticate, async (req, res) => {
   } catch (err) {
     console.error("User fetch error:", err);
     res.status(500).json({ error: 'Failed to fetch profile' });
+  }
+});
+
+app.post('/admin-login', (req, res) => {
+  const { email, password } = req.body;
+
+  if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+    // Generate a token (or just send success)
+    res.json({ success: true, message: 'Admin logged in successfully!' });
+  } else {
+    res.json({ success: false, message: 'Invalid credentials' });
   }
 });
 
