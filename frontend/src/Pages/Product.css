@@ -275,6 +275,119 @@
   color: #666;
 }
 
+.dark-mode {
+  background: #121212;
+  color: #f5f5f5;
+}
+
+/* For the main page background */
+.dark-mode .product-page {
+  background-color: #121212;
+  color: #f5f5f5;
+}
+
+/* Ensure all containers have dark mode background */
+.dark-mode .product-display,
+.dark-mode .reviews-container,
+.dark-mode .review-form,
+.dark-mode .footer,
+.dark-mode .header {
+  background-color: #1e1e1e;
+  color: #f5f5f5;
+}
+
+/* Adjust main product image container */
+.dark-mode .image-container {
+  background-color: #2a2a2a;
+  box-shadow: 0 6px 18px rgba(255, 255, 255, 0.05);
+}
+
+/* Product title and description */
+.dark-mode .product-display-right h1,
+.dark-mode .product-display-right-price-new,
+.dark-mode .product-display-right-price-old,
+.dark-mode .product-display-right-description,
+.dark-mode .product-display-right-category,
+.dark-mode .product-details-extra {
+  color: #e0e0e0;
+}
+
+/* Review form */
+.dark-mode .review-form {
+  background: #2a2a2a;
+}
+
+/* Text in the review form */
+.dark-mode .review-form h3,
+.dark-mode .form-group label,
+.dark-mode .review-comment,
+.dark-mode .review-header,
+.dark-mode .rating-text {
+  color: #f0f0f0;
+}
+
+/* Form inputs and selects */
+.dark-mode .form-group input,
+.dark-mode .form-group select,
+.dark-mode .form-group textarea {
+  background: #1f1f1f;
+  border: 1px solid #555;
+  color: #fff;
+}
+
+/* Button styles */
+.dark-mode .add-to-cart-btn,
+.dark-mode .submit-review-btn {
+  background-color: #c62828;
+  color: #fff;
+}
+
+.dark-mode .add-to-cart-btn:hover,
+.dark-mode .submit-review-btn:hover {
+  background-color: #a91f1f;
+  box-shadow: 0 4px 10px rgba(255, 100, 100, 0.15);
+}
+
+/* Error message */
+.dark-mode .error-message {
+  color: #ff6b6b;
+  background: #3d1a1a;
+}
+
+/* Reviews list */
+.dark-mode .reviews-list {
+  background-color: #1e1e1e;
+}
+
+.dark-mode .review-item {
+  border-bottom: 1px solid #444;
+}
+
+/* Adjust images in dark mode */
+.dark-mode img {
+  filter: brightness(0.85);
+  transition: filter 0.3s ease;
+}
+
+.dark-mode img:hover {
+  filter: brightness(1);
+}
+
+/* Loading and no reviews messages */
+.dark-mode .loading-reviews,
+.dark-mode .no-reviews {
+  color: #aaa;
+}
+
+/* Review stars */
+.dark-mode .review-rating {
+  color: #fbc02d;
+}
+
+.dark-mode .review-header h4 {
+  color: #f5f5f5;
+}
+
 /* Responsive Design */
 @media (max-width: 1024px) {
   .main-product-image {

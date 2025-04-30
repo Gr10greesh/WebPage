@@ -1,5 +1,5 @@
 "use client"
-
+import { toast } from 'react-toastify';
 import { useState, useEffect } from "react"
 import { useParams } from "react-router-dom"
 import axios from "axios"
@@ -60,12 +60,12 @@ const Product = () => {
 
   const handleAddToCart = () => {
     if (!userProfile) {
-      alert("Please log in to add items to your cart!");
+      toast.error("Please log in to add items to your cart!");
       return;
     }
     if (product) {
       addToCart(product._id)
-      alert(`${product.name} added to cart!`)
+      toast.success(`${product.name} added to cart!`)
     }
   };
 

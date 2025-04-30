@@ -3,6 +3,8 @@
   max-width: 1600px;
   margin: 0 auto;
   padding: 0 20px;
+  background: var(--bg-color);
+  color: var(--text-color);
 }
 
 /* Banner Styles */
@@ -71,6 +73,8 @@
   height: fit-content;
   align-self: flex-start;
   transition: all 0.3s ease;
+  background: var(--secondary-color);
+  border-right: 1px solid var(--border-color);
 }
 
 .shopcategory-sidebar h3 {
@@ -88,7 +92,7 @@
 .filter-section h4 {
   margin-bottom: 15px;
   font-size: 16px;
-  color: #555;
+  color: var(--text-color);
   font-weight: 600;
 }
 
@@ -365,6 +369,39 @@
 
 .dot:hover {
   background-color: #ff7875;
+}
+
+.dark-mode .shopcategory-indexSort p,
+.dark-mode .shopcategory-indexSort span {
+  color: #f5f5f5;
+}
+
+.dark-mode .shopcategory-sort {
+  background-color: #2a2a2a;
+  color: #f5f5f5;
+  border: 1px solid #444;
+}
+
+.dark-mode .shopcategory-sort option {
+  background-color: #2a2a2a;
+  color: #f5f5f5;
+}
+
+.dark-mode .filter-toggle-btn {
+  background-color: #2a2a2a;
+  color: #f5f5f5;
+  border: 1px solid #444;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.dark-mode .filter-toggle-btn:hover {
+  background-color: #333;
+}
+.dark-mode .shop-category h3{
+  color: #f5f5f5;
 }
 
 /* Responsive Styles */

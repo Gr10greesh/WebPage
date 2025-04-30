@@ -4,6 +4,7 @@ import './CSS/LoginSignup.css';
 import axios from 'axios';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
+import { toast } from 'react-toastify';
 
 const LoginSignup = () => {
   const [state, setState] = useState("Login");
@@ -43,11 +44,11 @@ const LoginSignup = () => {
         await fetchUserProfile();
         navigate(from, { replace: true });
       } else {
-        alert(response.data.message || "Signup failed");
+        toast.error(response.data.message || "Signup failed");
       }
     } catch (error) {
       console.error("Error completing signup:", error.response?.data || error.message);
-      alert("An error occurred. Please try again later.");
+      toast.error("An error occurred. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -107,7 +108,7 @@ const LoginSignup = () => {
     e.preventDefault();
     setLoading(true);
     if (!formData.email || !formData.password) {
-      alert("Please fill all required fields");
+      toast.error("Please fill all required fields");
       setLoading(false);
       return;
     }
@@ -124,11 +125,11 @@ const LoginSignup = () => {
         await fetchUserProfile();
         navigate(from, { replace: true });
       } else {
-        alert(response.data.errors || "Invalid credentials");
+        toast.error(response.data.errors || "Invalid credentials");
       }
     } catch (error) {
       console.error("Error during login:", error);
-      alert("An error occurred. Please try again later.");
+      toast.error("An error occurred. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -139,7 +140,7 @@ const LoginSignup = () => {
     setLoading(true);
   
     if (!formData.email || !formData.phonenumber || !formData.password || !formData.confirmPassword) {
-      alert("Please fill all required fields");
+      toast.error("Please fill all required fields");
       setLoading(false);
       return;
     }
@@ -151,7 +152,7 @@ const LoginSignup = () => {
     }
   
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match");
+      toast.error("Passwords do not match");
       setLoading(false);
       return;
     }
@@ -171,7 +172,7 @@ const LoginSignup = () => {
       await completeSignup(formData);
     } catch (error) {
       console.error("Error during signup:", error);
-      alert(error.response?.data?.message || "An error occurred. Please try again later.");
+      toast.error(error.response?.data?.message || "An error occurred. Please try again later.");
       setLoading(false);
     }
   };
@@ -179,7 +180,7 @@ const LoginSignup = () => {
   const handleForgotPassword = async (e) => {
     e.preventDefault();
     if (!formData.email) {
-      alert("Please enter your email address");
+      toast.error("Please enter your email address");
       return;
     }
 
@@ -190,25 +191,25 @@ const LoginSignup = () => {
 
       if (response.data.success) {
         setResetEmailSent(true);
-        alert("Password reset link sent to your email. Check your inbox.");
+        toast.success("Password reset link sent to your email. Check your inbox.");
       } else {
-        alert(response.data.message || "Error sending reset link");
+        toast.error(response.data.message || "Error sending reset link");
       }
     } catch (error) {
       console.error("Error in forgot password:", error);
-      alert("An error occurred. Please try again.");
+      toast.error("An error occurred. Please try again.");
     }
   };
 
   const handlePasswordReset = async (e) => {
     e.preventDefault();
     if (!formData.resetToken || !formData.newPassword || !formData.confirmPassword) {
-      alert("Please fill all fields");
+      toast.error("Please fill all fields");
       return;
     }
 
     if (formData.newPassword !== formData.confirmPassword) {
-      alert("Passwords don't match");
+      toast.error("Passwords don't match");
       return;
     }
 
@@ -219,15 +220,15 @@ const LoginSignup = () => {
       });
 
       if (response.data.success) {
-        alert("Password reset successfully!");
+        toast.success("Password reset successfully!");
         resetForgotPasswordFlow();
         setState("Login");
       } else {
-        alert(response.data.message || "Password reset failed");
+        toast.error(response.data.message || "Password reset failed");
       }
     } catch (error) {
       console.error("Error resetting password:", error);
-      alert("An error occurred. Please try again.");
+      toast.error("An error occurred. Please try again.");
     }
   };
 
@@ -252,7 +253,7 @@ const LoginSignup = () => {
 
   const handleGoogleFailure = (error) => {
     console.error("Google Sign-In Error:", error);
-    alert("Failed to sign in with Google. Please try again.");
+    toast.error("Failed to sign in with Google. Please try again.");
   };
 
   const { authRedirectMessage } = useContext(ShopContext);
