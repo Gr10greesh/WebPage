@@ -1,3 +1,4 @@
+import React, { useContext, useEffect } from "react";
 import "./App.css";
 import Navbar from "./Components/Navbar/Navbar";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
@@ -16,9 +17,11 @@ import Checkout from "./Components/Checkout/Checkout";
 import PaymentCallback from "./Components/PaymentCallback/PaymentCallback";
 import OrderSuccess from "./Components/OrderSuccess/OrderSuccess";
 import Chatbot from "./Components/Chatbot/Chatbot";
+import { ShopContext } from "./Context/ShopContext";
 
 function App() {
-  const location = useLocation(); // 👈 Get the current URL path
+  const location = useLocation(); 
+  const { darkMode } = useContext(ShopContext);
 
   // List of paths where Footer should not appear
   const hideFooterRoutes = [
@@ -31,8 +34,13 @@ function App() {
   // Check if we should hide Footer
   const shouldHideFooter = hideFooterRoutes.some(path => location.pathname.startsWith(path));
 
+  // Apply dark mode class to body
+  useEffect(() => {
+    document.body.classList.toggle('dark-mode', darkMode);
+  }, [darkMode]);
+
   return (
-    <div>
+    <div className={`app-container ${darkMode ? 'dark' : 'light'}`}>
       <Navbar />
       <Routes>
         <Route path="/" element={<ShopCategory category="all" />} />
