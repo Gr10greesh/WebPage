@@ -12,6 +12,12 @@ const ShopContextProvider = ({ children }) => {
   const [authRedirectMessage, setAuthRedirectMessage] = useState("");
   const [userId, setUserId] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
+   // Add this state near your other states
+   const [darkMode, setDarkMode] = useState(() => {
+    // Check localStorage for saved preference
+    const savedMode = localStorage.getItem('darkMode');
+    return savedMode ? JSON.parse(savedMode) : false;
+  });
 
   const [isProfileLoading, setIsProfileLoading] = useState(false);
   const lastFetchTime = useRef(0);
@@ -39,6 +45,17 @@ const ShopContextProvider = ({ children }) => {
       setLoading(false);
     }
   }, []);
+
+    // Add this effect to persist dark mode preference
+    useEffect(() => {
+      localStorage.setItem('darkMode', JSON.stringify(darkMode));
+      // Apply the class to the document body
+      if (darkMode) {
+        document.body.classList.add('dark-mode');
+      } else {
+        document.body.classList.remove('dark-mode');
+      }
+    }, [darkMode]);
 
   useEffect(() => {
     const token = localStorage.getItem("auth-token");
@@ -286,6 +303,8 @@ const ShopContextProvider = ({ children }) => {
     updateUserProfile,
     verifyUserToken,
     isProfileLoading,
+    darkMode,
+    toggleDarkMode: () => setDarkMode(prev => !prev),
     changePassword
   }), [
     allProducts,
@@ -310,6 +329,7 @@ const ShopContextProvider = ({ children }) => {
     updateUserProfile,
     verifyUserToken,
     isProfileLoading,
+    darkMode,
     changePassword
   ]);
 
